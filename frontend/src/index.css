@@ -95,15 +95,6 @@ button {
 }
 
 .sidebar {
-    width: 250px;
-    min-height: 100vh;
-    background: #14532d;
-    color: white;
-    display: flex;
-    flex-direction: column;
-}
-
-.sidebar {
     width: 260px;
     height: 100vh;
     position: sticky;
@@ -1851,3 +1842,58 @@ button {
     color: #6b7280;
 }
 
+/* ===== Compact sizing (overrides) ===== */
+
+/* Sidebar */
+.sidebar { width: 230px; padding: 18px 16px 16px; }
+.sidebar-brand { gap: 10px; padding-bottom: 20px; }
+.sidebar-logo { width: 40px; height: 40px; border-radius: 12px; font-size: 18px; }
+.sidebar-brand h2 { margin-bottom: 2px; font-size: 15px; }
+.sidebar-brand span { font-size: 12px; }
+.sidebar-nav { gap: 4px; margin: 0 -4px; }
+.sidebar-link { gap: 10px; padding: 11px 14px; border-radius: 10px; font-size: 14px; }
+.sidebar-link svg { width: 17px; height: 17px; }
+.sidebar-bottom { padding-top: 14px; }
+.sidebar-user { margin-bottom: 10px; font-size: 13px; }
+.role-pill { padding: 4px 10px; font-size: 11px; }
+.logout-btn { padding: 9px; border-radius: 10px; font-size: 13px; }
+.sidebar-status { margin-top: 12px; padding-top: 12px; }
+.status-line { gap: 8px; font-size: 12px; }
+.status-dot { width: 8px; height: 8px; }
+.sidebar-status small { margin-top: 6px; font-size: 11px; }
+
+/* Results page */
+.cls-header { gap: 16px; margin-bottom: 18px; }
+.cls-eyebrow { font-size: 11px; }
+.cls-header h1 { margin: 2px 0 6px; font-size: 30px; }
+.cls-header p { font-size: 14px; }
+.cls-viability-pill { margin-top: 4px; margin-left: auto ; padding: 9px 14px; font-size: 13px; }
+.cls-threshold { margin-top: 10px; font-size: 13px; }
+
+.cls-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; }
+.cls-card { padding: 12px; border-radius: 18px; }
+.cls-side { gap: 12px; }
+.cls-side .cls-card { padding: 18px; }
+.cls-card h2 { margin-bottom: 12px; font-size: 17px; }
+
+.cls-stage { padding: 8px 0; border-radius: 10px; }
+.cls-image-wrap { margin: 0 auto; }
+
+.cls-seed-buttons { gap: 6px; margin-top: 12px; }
+.cls-seed-btn { min-width: 32px; height: 32px; padding: 0 8px; border-radius: 8px; font-size: 12px; }
+
+.cls-row { padding: 6px 0; font-size: 14px; }
+.cls-total { margin-top: 6px; padding-top: 12px; }
+.cls-small-label { font-size: 13px; }
+.cls-big-value { margin-top: 8px; font-size: 28px; }
+
+.cls-actions { gap: 10px; margin-top: 14px; }
+.cls-btn { padding: 10px 18px; border-radius: 10px; font-size: 14px; }
+
+@media (max-width: 1100px) {
+    .cls-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+    .sidebar { width: 100%; height: auto; position: static; }
+}

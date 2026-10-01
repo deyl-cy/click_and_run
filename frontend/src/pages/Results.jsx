@@ -379,7 +379,16 @@ export default function Results() {
 
                     <div className="cls-stage">
                         {imageUrl ? (
-                            <div className="cls-image-wrap" ref={wrapRef}>
+                            <div className="cls-image-wrap"
+                                ref={wrapRef}
+                                style={
+                                    imageWidth > 0 && imageHeight > 0
+                                        ? {
+                                            maxWidth: `calc(max(260px, 100vh - 340px) * ${imageWidth / imageHeight})`,
+                                        }
+                                        : undefined
+                                }
+                            >
 
                                 <img
                                     src={imageUrl}
