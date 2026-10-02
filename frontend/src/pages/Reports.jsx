@@ -1,520 +1,344 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import api from "../services/api";
 
-export default function Reports() {
-    const [reports, setReports] = useState([]);
+const DEFAULT_FILTERS = {
+    search: "",
+    sort: "newest",
+    dateField: "sown",
+    from: "",
+    to: "",
+};
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+function formatDate(value) {
+    const [year, month, day] = String(value || "")
+        .slice(0, 10)
+        .split("-")
+        .map(Number);
 
-    const [filters, setFilters] = useState({
-        seedLotNo: "",
-        accession: "",
-        readingDate: "",
-        replicateNumber: "",
-    });
-
-    const [pagination, setPagination] = useState({
-        currentPage: 1,
-        lastPage: 1,
-        total: 0,
-    });
-
-    async function loadReports(page = 1) {
-        setLoading(true);
-        setError("");
-
-        try {
-            const params = {
-                page,
-            };
-
-            if (filters.seedLotNo.trim()) {
-                params.seedLotNo =
-                    filters.seedLotNo.trim();
-            }
-
-            if (filters.accession.trim()) {
-                params.accession =
-                    filters.accession.trim();
-            }
-
-            if (filters.readingDate) {
-                params.readingDate =
-                    filters.readingDate;
-            }
-
-            if (filters.replicateNumber) {
-                params.replicateNumber =
-                    filters.replicateNumber;
-            }
-
-            const response = await api.get(
-                "/reports",
-                { params }
-            );
-
-            const result = response.data;
-
-            setReports(result.data || []);
-
-            setPagination({
-                currentPage:
-                    result.current_page || 1,
-
-                lastPage:
-                    result.last_page || 1,
-
-                total:
-                    result.total || 0,
-            });
-
-        } catch (error) {
-            console.error(
-                "Unable to load reports:",
-                error
-            );
-
-            setError(
-                error.response?.data?.message ||
-                "Unable to load reports."
-            );
-        } finally {
-            setLoading(false);
-        }
+    if (!year) {
+        return "-";
     }
 
-    useEffect(() => {
-        loadReports(1);
-    }, []);
+    return new Date(year, month - 1, day).toLocaleDateString(
+        "en-US",
+        {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        }
+    );
+}
 
-    function handleFilterChange(event) {
-        const {
-            name,
-            value,
-        } = event.target;
+function buildParams(filters) {
+    const params = {
+        sort: filters.sort,
+        dateField: filters.dateField,
+    };
 
+    if (filters.search.trim()) {
+        params.search = filters.search.trim();
+    }
+
+    if (filters.from) {
+        params.from = filters.from;
+    }
+
+    if (filters.to) {
+        params.to = filters.to;
+    }
+
+    return params;
+}
+
+function repLine(number, rep) {
+    if (!rep) {
+        return `Rep ${number}: Not recorded`;
+    }
+
+    return (
+        `Rep ${number}: N ${rep.normal_count} / ` +
+        `AB ${rep.abnormal_count} / D ${rep.dead_count}`
+    );
+}
+
+export default function Reports() {
+    const [filters, setFilters] = useState(DEFAULT_FILTERS);
+    const [groups, setGroups] = useState([]);
+    const [meta, setMeta] = useState({
+        test_reports: 0,
+        accessions: 0,
+    });
+
+    const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState("");
+    const [error, setError] = useState("");
+
+    const requestRef = useRef(0);
+
+    function setFilter(name, value) {
         setFilters((current) => ({
             ...current,
             [name]: value,
         }));
     }
 
-    function handleSearch(event) {
-        event.preventDefault();
+    /* Reload (debounced) whenever a filter changes */
 
-        loadReports(1);
-    }
+    useEffect(() => {
+        const timer = setTimeout(loadGroups, 300);
 
-    function clearFilters() {
-        const emptyFilters = {
-            seedLotNo: "",
-            accession: "",
-            readingDate: "",
-            replicateNumber: "",
-        };
+        return () => clearTimeout(timer);
+    }, [filters]);
 
-        setFilters(emptyFilters);
+    async function loadGroups() {
+        const requestId = ++requestRef.current;
 
-        setTimeout(() => {
-            loadReports(1);
-        }, 0);
-    }
+        setLoading(true);
+        setError("");
 
-    function goToPage(page) {
-        if (
-            page < 1 ||
-            page > pagination.lastPage ||
-            page === pagination.currentPage
-        ) {
-            return;
-        }
+        try {
+            const response = await api.get("/report-groups", {
+                params: buildParams(filters),
+            });
 
-        loadReports(page);
-    }
-
-    function formatDate(date) {
-        if (!date) {
-            return "—";
-        }
-
-        const parsed = new Date(date);
-
-        if (Number.isNaN(parsed.getTime())) {
-            return date;
-        }
-
-        return parsed.toLocaleDateString(
-            undefined,
-            {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
+            if (requestId !== requestRef.current) {
+                return;
             }
-        );
+
+            setGroups(response.data.data || []);
+            setMeta(
+                response.data.meta || {
+                    test_reports: 0,
+                    accessions: 0,
+                }
+            );
+        } catch (err) {
+            if (requestId !== requestRef.current) {
+                return;
+            }
+
+            console.error("Unable to load reports:", err);
+
+            setError(
+                err.response?.data?.message ||
+                "Unable to load the test reports."
+            );
+        } finally {
+            if (requestId === requestRef.current) {
+                setLoading(false);
+            }
+        }
     }
+
+    /* Download PDF / Excel of everything currently listed */
+
+    async function handleDownload(kind) {
+        setExporting(kind);
+        setError("");
+
+        try {
+            const response = await api.get(
+                `/report-groups/export/${kind}`,
+                {
+                    params: buildParams(filters),
+                    responseType: "blob",
+                }
+            );
+
+            const mime =
+                kind === "pdf"
+                    ? "application/pdf"
+                    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+            const url = window.URL.createObjectURL(
+                new Blob([response.data], { type: mime })
+            );
+
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download =
+                `seed-test-reports-${new Date().toLocaleDateString("en-CA")}.` +
+                (kind === "pdf" ? "pdf" : "xlsx");
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(`Unable to export ${kind}:`, err);
+
+            setError(
+                `Unable to download the ${
+                    kind === "pdf" ? "PDF" : "Excel"
+                } file.`
+            );
+        } finally {
+            setExporting("");
+        }
+    }
+
+    const count = groups.length;
 
     return (
-        <div className="reports-page">
+        <div className="rl-page">
 
-            {/* HEADER */}
-            <div className="page-header">
-
+            <div className="rl-header">
                 <div>
+                    <span className="rl-eyebrow">HISTORICAL DATA</span>
                     <h1>Test Reports</h1>
-
-                    <p>
-                        View and manage your saved
-                        seed analysis reports.
-                    </p>
+                    <p>Search and review saved seed analysis records.</p>
                 </div>
 
-                <Link
-                    to="/new-test"
-                    className="primary-button"
-                >
-                    New Test
+                <Link to="/new-test" className="rl-btn rl-btn-primary">
+                    + New Test
                 </Link>
-
             </div>
 
-
-            {/* FILTERS */}
-            <div className="content-card">
-
-                <h2>Search Reports</h2>
-
-                <form
-                    className="report-filters"
-                    onSubmit={handleSearch}
-                >
-
-                    <div className="filter-field">
-
-                        <label htmlFor="seedLotNo">
-                            Seed Lot No.
-                        </label>
-
-                        <input
-                            id="seedLotNo"
-                            name="seedLotNo"
-                            type="text"
-                            value={
-                                filters.seedLotNo
-                            }
-                            onChange={
-                                handleFilterChange
-                            }
-                            placeholder="Search seed lot"
-                        />
-
-                    </div>
-
-
-                    <div className="filter-field">
-
-                        <label htmlFor="accession">
-                            Accession
-                        </label>
-
-                        <input
-                            id="accession"
-                            name="accession"
-                            type="text"
-                            value={
-                                filters.accession
-                            }
-                            onChange={
-                                handleFilterChange
-                            }
-                            placeholder="Search accession"
-                        />
-
-                    </div>
-
-
-                    <div className="filter-field">
-
-                        <label htmlFor="readingDate">
-                            Reading Date
-                        </label>
-
-                        <input
-                            id="readingDate"
-                            name="readingDate"
-                            type="date"
-                            value={
-                                filters.readingDate
-                            }
-                            onChange={
-                                handleFilterChange
-                            }
-                        />
-
-                    </div>
-
-
-                    <div className="filter-field">
-
-                        <label htmlFor="replicateNumber">
-                            Replicate
-                        </label>
-
-                        <input
-                            id="replicateNumber"
-                            name="replicateNumber"
-                            type="number"
-                            min="1"
-                            value={
-                                filters.replicateNumber
-                            }
-                            onChange={
-                                handleFilterChange
-                            }
-                            placeholder="Replicate"
-                        />
-
-                    </div>
-
-
-                    <div className="filter-actions">
-
-                        <button
-                            type="submit"
-                            className="primary-button"
-                        >
-                            Search
-                        </button>
-
-                        <button
-                            type="button"
-                            className="secondary-button"
-                            onClick={
-                                clearFilters
-                            }
-                        >
-                            Clear
-                        </button>
-
-                    </div>
-
-                </form>
-
-            </div>
-
-
-            {/* RESULTS */}
-            <div className="content-card">
-
-                <div className="reports-header">
-
-                    <div>
-                        <h2>Saved Reports</h2>
-
-                        <p>
-                            {pagination.total}{" "}
-                            report
-                            {pagination.total === 1
-                                ? ""
-                                : "s"}
-                        </p>
-                    </div>
-
+            {/* Search / sort */}
+            <div className="rl-toolbar">
+                <div className="rl-search">
+                    <span>⌕</span>
+                    <input
+                        type="text"
+                        placeholder="Search lot, accession, or name"
+                        value={filters.search}
+                        onChange={(event) =>
+                            setFilter("search", event.target.value)
+                        }
+                    />
                 </div>
 
+                <select
+                    className="rl-input"
+                    value={filters.sort}
+                    onChange={(event) =>
+                        setFilter("sort", event.target.value)
+                    }
+                >
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="name">Accession name (A-Z)</option>
+                    <option value="viability">Highest viability</option>
+                </select>
 
-                {error && (
-                    <div className="error-message">
-                        {error}
+                <span className="rl-count">
+                    {meta.test_reports} test reports /{" "}
+                    {meta.accessions} accessions
+                </span>
+            </div>
+
+            {/* Date filters / downloads */}
+            <div className="rl-filters">
+                <label>
+                    <span>Date field</span>
+                    <select
+                        className="rl-input"
+                        value={filters.dateField}
+                        onChange={(event) =>
+                            setFilter("dateField", event.target.value)
+                        }
+                    >
+                        <option value="sown">Sowing date</option>
+                        <option value="reading">Reading date</option>
+                    </select>
+                </label>
+
+                <label>
+                    <span>From</span>
+                    <input
+                        type="date"
+                        className="rl-input"
+                        value={filters.from}
+                        onChange={(event) =>
+                            setFilter("from", event.target.value)
+                        }
+                    />
+                </label>
+
+                <label>
+                    <span>To</span>
+                    <input
+                        type="date"
+                        className="rl-input"
+                        value={filters.to}
+                        onChange={(event) =>
+                            setFilter("to", event.target.value)
+                        }
+                    />
+                </label>
+
+                <button
+                    type="button"
+                    className="rl-btn rl-btn-primary"
+                    disabled={count === 0 || exporting !== ""}
+                    onClick={() => handleDownload("pdf")}
+                >
+                    {exporting === "pdf"
+                        ? "Preparing..."
+                        : `Download PDF (${count})`}
+                </button>
+
+                <button
+                    type="button"
+                    className="rl-btn"
+                    disabled={count === 0 || exporting !== ""}
+                    onClick={() => handleDownload("excel")}
+                >
+                    {exporting === "excel"
+                        ? "Preparing..."
+                        : `Download Excel (${count})`}
+                </button>
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
+
+            {/* List */}
+            <div className="rl-list">
+                {loading && count === 0 ? (
+                    <div className="rl-empty">Loading reports...</div>
+                ) : count === 0 ? (
+                    <div className="rl-empty">
+                        No test reports found.
                     </div>
-                )}
-
-
-                {loading ? (
-
-                    <div className="loading-state">
-                        Loading reports...
-                    </div>
-
-                ) : reports.length === 0 ? (
-
-                    <div className="empty-state">
-
-                        <h3>
-                            No reports found
-                        </h3>
-
-                        <p>
-                            Try changing your
-                            search filters or
-                            create a new test.
-                        </p>
-
-                    </div>
-
                 ) : (
-
-                    <div className="table-wrapper">
-
-                        <table className="results-table">
-
-                            <thead>
-
-                                <tr>
-                                    <th>Seed Lot</th>
-                                    <th>Accession</th>
-                                    <th>Reading Date</th>
-                                    <th>Replicate</th>
-                                    <th>Normal</th>
-                                    <th>Abnormal</th>
-                                    <th>Dead</th>
-                                    <th>Viability</th>
-                                    <th>Germination</th>
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody>
-
-                                {reports.map(
-                                    (report) => (
-
-                                        <tr
-                                            key={
-                                                report.id
-                                            }
-                                        >
-
-                                            <td>
-                                                <Link
-                                                    to={`/reports/${report.id}`}
-                                                    className="table-link"
-                                                >
-                                                    {
-                                                        report.seed_lot_no
-                                                    }
-                                                </Link>
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.accession ||
-                                                    "—"
-                                                }
-                                            </td>
-
-                                            <td>
-                                                {formatDate(
-                                                    report.reading_date
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.replicate_number
-                                                }
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.normal_count
-                                                }
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.abnormal_count
-                                                }
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.dead_count
-                                                }
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.viability
-                                                }%
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    report.predicted_germination
-                                                }%
-                                            </td>
-
-                                        </tr>
-
-                                    )
+                    groups.map((group) => (
+                        <Link
+                            key={group.key}
+                            to={`/reports/${group.id}`}
+                            className="rl-card"
+                        >
+                            <div className="rl-thumb">
+                                {group.image_url ? (
+                                    <img src={group.image_url} alt="" />
+                                ) : (
+                                    <span>No image</span>
                                 )}
+                            </div>
 
-                            </tbody>
+                            <div className="rl-body">
+                                <h3>{group.accession_name}</h3>
+                                <p>Lot No.: {group.seed_lot_no}</p>
+                                <p>Accession: {group.accession || "-"}</p>
+                                <p>Date Sown: {formatDate(group.date_sown)}</p>
+                                <p>{repLine(1, group.reps?.[1])}</p>
+                                <p>{repLine(2, group.reps?.[2])}</p>
+                            </div>
 
-                        </table>
+                            <div className="rl-score">
+                                <strong>
+                                    {Number(group.viability).toFixed(1)}%
+                                </strong>
+                                <span>Total Viability</span>
+                            </div>
 
-                    </div>
-
+                            <span className="rl-chevron">›</span>
+                        </Link>
+                    ))
                 )}
-
-
-                {/* PAGINATION */}
-                {!loading &&
-                    pagination.lastPage > 1 && (
-
-                    <div className="pagination">
-
-                        <button
-                            type="button"
-                            className="secondary-button"
-                            disabled={
-                                pagination.currentPage ===
-                                1
-                            }
-                            onClick={() =>
-                                goToPage(
-                                    pagination.currentPage -
-                                    1
-                                )
-                            }
-                        >
-                            Previous
-                        </button>
-
-
-                        <span className="pagination-info">
-                            Page{" "}
-                            {pagination.currentPage}{" "}
-                            of{" "}
-                            {pagination.lastPage}
-                        </span>
-
-
-                        <button
-                            type="button"
-                            className="secondary-button"
-                            disabled={
-                                pagination.currentPage ===
-                                pagination.lastPage
-                            }
-                            onClick={() =>
-                                goToPage(
-                                    pagination.currentPage +
-                                    1
-                                )
-                            }
-                        >
-                            Next
-                        </button>
-
-                    </div>
-
-                )}
-
             </div>
 
         </div>

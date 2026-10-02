@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\Api\ReportGroupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -132,6 +133,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get(
         '/reports/{report}/export/excel',
         [ReportExportController::class, 'excel']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Report Groups Exports
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/report-groups',
+        [ReportGroupController::class, 'index']
+    );
+
+    Route::get(
+        '/report-groups/export/pdf',
+        [ReportGroupController::class, 'pdf']
+    );
+    Route::get(
+        '/report-groups/export/excel',
+        [ReportGroupController::class, 'excel']
     );
 
 
