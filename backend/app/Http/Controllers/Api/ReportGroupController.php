@@ -19,14 +19,32 @@ class ReportGroupController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $groups = $this->service->groups(
-            $request->user(),
-            $this->filters($request)
-        );
+        $filters = $this->filters($request);
+
+        $paging = $request->validate([
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $perPage = (int) ($paging['per_page'] ?? 10);
+
+        $groups = $this->service->groups($request->user(), $filters);
+
+        $total = $groups->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min(max(1, (int) ($paging['page'] ?? 1)), $lastPage);
 
         return response()->json([
-            'data' => $groups,
-            'meta' => $this->service->summary($groups),
+            'data' => $groups->forPage($page, $perPage)->values(),
+
+            // test_reports / accessions count every match,
+            // not just the current page.
+            'meta' => $this->service->summary($groups) + [
+                'total' => $total,
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

@@ -22,6 +22,8 @@ class ReportGroupService
         $to = $filters['to'] ?? null;
 
         // Seed lots that match the filters.
+        // distinct() runs in SQL (exact match), so "01" and "1"
+        // stay different lots.
         $matchingLots = Report::query()
             ->where('user_id', $user->id)
             ->when($search, function ($query) use ($search) {
@@ -36,9 +38,8 @@ class ReportGroupService
             })
             ->when($from, fn ($query) => $query->whereDate($dateColumn, '>=', $from))
             ->when($to, fn ($query) => $query->whereDate($dateColumn, '<=', $to))
-            ->pluck('seed_lot_no')
-            ->unique()
-            ->values();
+            ->distinct()
+            ->pluck('seed_lot_no');
 
         if ($matchingLots->isEmpty()) {
             return collect();

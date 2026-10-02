@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 
 import api from "../services/api";
 
+const PER_PAGE = 10;
+
 const DEFAULT_FILTERS = {
     search: "",
     sort: "newest",
@@ -52,6 +54,29 @@ function buildParams(filters) {
     return params;
 }
 
+function pageList(current, last) {
+    if (last <= 7) {
+        return Array.from({ length: last }, (_, index) => index + 1);
+    }
+
+    const pages = [1, last, current - 1, current, current + 1]
+        .filter((page) => page >= 1 && page <= last)
+        .filter((page, index, all) => all.indexOf(page) === index)
+        .sort((a, b) => a - b);
+
+    const result = [];
+
+    pages.forEach((page, index) => {
+        if (index > 0 && page - pages[index - 1] > 1) {
+            result.push("...");
+        }
+
+        result.push(page);
+    });
+
+    return result;
+}
+
 function repLine(number, rep) {
     if (!rep) {
         return `Rep ${number}: Not recorded`;
@@ -66,9 +91,14 @@ function repLine(number, rep) {
 export default function Reports() {
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
     const [groups, setGroups] = useState([]);
+    const [page, setPage] = useState(1);
     const [meta, setMeta] = useState({
         test_reports: 0,
         accessions: 0,
+        total: 0,
+        current_page: 1,
+        last_page: 1,
+        per_page: PER_PAGE,
     });
 
     const [loading, setLoading] = useState(true);
@@ -78,19 +108,26 @@ export default function Reports() {
     const requestRef = useRef(0);
 
     function setFilter(name, value) {
+        setPage(1);
+
         setFilters((current) => ({
             ...current,
             [name]: value,
         }));
     }
 
-    /* Reload (debounced) whenever a filter changes */
+    function goToPage(number) {
+        setPage(number);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* Reload (debounced) whenever a filter or the page changes */
 
     useEffect(() => {
         const timer = setTimeout(loadGroups, 300);
 
         return () => clearTimeout(timer);
-    }, [filters]);
+    }, [filters, page]);
 
     async function loadGroups() {
         const requestId = ++requestRef.current;
@@ -100,7 +137,11 @@ export default function Reports() {
 
         try {
             const response = await api.get("/report-groups", {
-                params: buildParams(filters),
+                params: {
+                    ...buildParams(filters),
+                    page,
+                    per_page: PER_PAGE,
+                },
             });
 
             if (requestId !== requestRef.current) {
@@ -108,12 +149,10 @@ export default function Reports() {
             }
 
             setGroups(response.data.data || []);
-            setMeta(
-                response.data.meta || {
-                    test_reports: 0,
-                    accessions: 0,
-                }
-            );
+            setMeta((current) => ({
+                ...current,
+                ...(response.data.meta || {}),
+            }));
         } catch (err) {
             if (requestId !== requestRef.current) {
                 return;
@@ -132,7 +171,7 @@ export default function Reports() {
         }
     }
 
-    /* Download PDF / Excel of everything currently listed */
+    /* Download PDF / Excel of ALL reports matching the filters */
 
     async function handleDownload(kind) {
         setExporting(kind);
@@ -182,6 +221,11 @@ export default function Reports() {
     }
 
     const count = groups.length;
+    const totalCount = meta.accessions;
+
+    const rangeStart =
+        count === 0 ? 0 : (meta.current_page - 1) * meta.per_page + 1;
+    const rangeEnd = rangeStart + count - 1;
 
     return (
         <div className="rl-page">
@@ -274,23 +318,23 @@ export default function Reports() {
                 <button
                     type="button"
                     className="rl-btn rl-btn-primary"
-                    disabled={count === 0 || exporting !== ""}
+                    disabled={totalCount === 0 || exporting !== ""}
                     onClick={() => handleDownload("pdf")}
                 >
                     {exporting === "pdf"
                         ? "Preparing..."
-                        : `Download PDF (${count})`}
+                        : `Download PDF (${totalCount})`}
                 </button>
 
                 <button
                     type="button"
                     className="rl-btn"
-                    disabled={count === 0 || exporting !== ""}
+                    disabled={totalCount === 0 || exporting !== ""}
                     onClick={() => handleDownload("excel")}
                 >
                     {exporting === "excel"
                         ? "Preparing..."
-                        : `Download Excel (${count})`}
+                        : `Download Excel (${totalCount})`}
                 </button>
             </div>
 
@@ -340,6 +384,74 @@ export default function Reports() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {totalCount > 0 && (
+                <div className="rl-pagination-bar">
+                    <span className="rl-page-info">
+                        Showing {rangeStart}-{rangeEnd} of {totalCount}{" "}
+                        accessions
+                    </span>
+
+                    {meta.last_page > 1 && (
+                        <nav className="rl-pagination">
+                            <button
+                                type="button"
+                                className="rl-page-btn"
+                                disabled={meta.current_page <= 1 || loading}
+                                onClick={() =>
+                                    goToPage(meta.current_page - 1)
+                                }
+                            >
+                                ‹ Previous
+                            </button>
+
+                            {pageList(
+                                meta.current_page,
+                                meta.last_page
+                            ).map((item, index) =>
+                                item === "..." ? (
+                                    <span
+                                        key={`gap-${index}`}
+                                        className="rl-page-gap"
+                                    >
+                                        …
+                                    </span>
+                                ) : (
+                                    <button
+                                        key={item}
+                                        type="button"
+                                        className={
+                                            "rl-page-btn" +
+                                            (item === meta.current_page
+                                                ? " active"
+                                                : "")
+                                        }
+                                        disabled={loading}
+                                        onClick={() => goToPage(item)}
+                                    >
+                                        {item}
+                                    </button>
+                                )
+                            )}
+
+                            <button
+                                type="button"
+                                className="rl-page-btn"
+                                disabled={
+                                    meta.current_page >= meta.last_page ||
+                                    loading
+                                }
+                                onClick={() =>
+                                    goToPage(meta.current_page + 1)
+                                }
+                            >
+                                Next ›
+                            </button>
+                        </nav>
+                    )}
+                </div>
+            )}
 
         </div>
     );
