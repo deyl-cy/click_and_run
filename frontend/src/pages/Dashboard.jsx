@@ -1,3 +1,4 @@
+import { RefreshIcon, CheckIcon, XIcon } from "../components/Icons";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
@@ -115,7 +116,7 @@ export default function Dashboard() {
                         loadDashboard();
                     }}
                 >
-                    Retry
+                    <RefreshIcon size={16} /> Retry
                 </button>
             </div>
         );
@@ -237,7 +238,7 @@ export default function Dashboard() {
                             className="primary-button"
                             onClick={handleApplyFilters}
                         >
-                            Apply
+                            <CheckIcon size={16} /> Apply
                         </button>
 
                         <button
@@ -245,7 +246,7 @@ export default function Dashboard() {
                             className="secondary-button"
                             onClick={handleClearFilters}
                         >
-                            Clear
+                            <XIcon size={16} /> Clear
                         </button>
                     </div>
                 </div>

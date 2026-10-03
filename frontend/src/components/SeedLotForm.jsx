@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from "./Icons";
 import { useState } from "react";
 
 export default function SeedLotForm({
@@ -138,9 +139,7 @@ export default function SeedLotForm({
                 disabled={loading}
                 className="primary-button"
             >
-                {loading
-                    ? "Preparing..."
-                    : "Continue"}
+                {loading ? "Preparing..." : <>Continue <ArrowRightIcon size={16} /></>}
             </button>
         </form>
     );

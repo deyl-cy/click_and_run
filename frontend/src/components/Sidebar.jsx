@@ -1,3 +1,4 @@
+import { LogOutIcon } from "./Icons";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -107,7 +108,7 @@ export default function Sidebar() {
                     className="logout-btn"
                     onClick={logout}
                 >
-                    Log out
+                    <LogOutIcon size={16} /> Log out
                 </button>
 
                 <div className="sidebar-status">

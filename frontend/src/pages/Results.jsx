@@ -1,3 +1,4 @@
+import { ScanIcon, XIcon, SaveIcon } from "../components/Icons";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -286,7 +287,7 @@ export default function Results() {
                     className="cls-btn cls-btn-primary"
                     onClick={() => navigate("/new-test")}
                 >
-                    Start New Test
+                    <ScanIcon size={17} /> Start New Test
                 </button>
             </div>
         );
@@ -474,7 +475,7 @@ export default function Results() {
                                                 setPopupOpen(false)
                                             }
                                         >
-                                            ×
+                                            <XIcon size={16} />
                                         </button>
 
                                         <strong>
@@ -583,7 +584,7 @@ export default function Results() {
                     onClick={() => navigate("/new-test")}
                     disabled={saving}
                 >
-                    Cancel
+                    <XIcon size={16} /> Cancel
                 </button>
 
                 <button
@@ -592,7 +593,7 @@ export default function Results() {
                     onClick={saveReport}
                     disabled={saving}
                 >
-                    {saving ? "Saving..." : "Save Result"}
+                    {saving ? "Saving..." : <><SaveIcon size={16} /> Save Result</>}
                 </button>
             </div>
 

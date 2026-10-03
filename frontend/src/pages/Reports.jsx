@@ -1,3 +1,4 @@
+import { PlusIcon, SearchIcon, PdfIcon, ExcelIcon, DownloadIcon, ChevronLeftIcon, ChevronRightIcon } from "../components/Icons";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -252,14 +253,15 @@ export default function Reports() {
                 </div>
 
                 <Link to="/new-test" className="rl-btn rl-btn-primary">
-                    + New Test
+                    <PlusIcon size={17} />
+                    New Test
                 </Link>
             </div>
 
             {/* Search / sort */}
             <div className="rl-toolbar">
                 <div className="rl-search">
-                    <span>⌕</span>
+                    <SearchIcon size={17} />
                     <input
                         type="text"
                         placeholder="Search lot, accession, or name"
@@ -359,9 +361,7 @@ export default function Reports() {
                     disabled={totalCount === 0 || exporting !== ""}
                     onClick={() => handleDownload("pdf")}
                 >
-                    {exporting === "pdf"
-                        ? "Preparing..."
-                        : `Download PDF (${totalCount})`}
+                    {exporting === "pdf" ? <><DownloadIcon size={16} /> Preparing...</> : <><PdfIcon size={16} /> Download PDF ({totalCount})</>}
                 </button>
 
                 <button
@@ -370,9 +370,7 @@ export default function Reports() {
                     disabled={totalCount === 0 || exporting !== ""}
                     onClick={() => handleDownload("excel")}
                 >
-                    {exporting === "excel"
-                        ? "Preparing..."
-                        : `Download Excel (${totalCount})`}
+                    {exporting === "excel" ? <><DownloadIcon size={16} /> Preparing...</> : <><ExcelIcon size={16} /> Download Excel ({totalCount})</>}
                 </button>
             </div>
 
@@ -444,7 +442,7 @@ export default function Reports() {
                                     goToPage(meta.current_page - 1)
                                 }
                             >
-                                ‹ Previous
+                                <ChevronLeftIcon size={16} /> Previous
                             </button>
 
                             {pageList(
@@ -487,7 +485,7 @@ export default function Reports() {
                                     goToPage(meta.current_page + 1)
                                 }
                             >
-                                Next ›
+                                Next <ChevronRightIcon size={16} />
                             </button>
                         </nav>
                     )}

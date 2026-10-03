@@ -1,3 +1,4 @@
+import { PlusIcon, XIcon, SaveIcon, PdfIcon, ExcelIcon, EditIcon, TrashIcon } from "../components/Icons";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -114,7 +115,7 @@ function ReplicateCard({
                         className="rp-btn rp-btn-primary"
                         onClick={() => onAdd(number)}
                     >
-                        Add Rep {number} Test
+                        <PlusIcon size={16} /> Add Rep {number} Test
                     </button>
                 )}
             </section>
@@ -275,7 +276,7 @@ function ReplicateCard({
                                 setError("");
                             }}
                         >
-                            Cancel
+                            <XIcon size={16} /> Cancel
                         </button>
 
                         <button
@@ -284,7 +285,7 @@ function ReplicateCard({
                             disabled={saving}
                             onClick={saveChanges}
                         >
-                            {saving ? "Saving..." : "Save changes"}
+                            {saving ? "Saving..." : <><SaveIcon size={16} /> Save changes</>}
                         </button>
                     </>
                 ) : (
@@ -295,7 +296,7 @@ function ReplicateCard({
                             disabled={busyKey === `${report.id}-pdf`}
                             onClick={() => onExport(report, "pdf")}
                         >
-                            PDF
+                            <PdfIcon size={16} /> PDF
                         </button>
 
                         <button
@@ -304,7 +305,7 @@ function ReplicateCard({
                             disabled={busyKey === `${report.id}-excel`}
                             onClick={() => onExport(report, "excel")}
                         >
-                            Excel
+                            <ExcelIcon size={16} /> Excel
                         </button>
 
                         <button
@@ -312,7 +313,7 @@ function ReplicateCard({
                             className="rp-btn"
                             onClick={startEdit}
                         >
-                            Edit AI results
+                            <EditIcon size={16} /> Edit AI results
                         </button>
 
                         <button
@@ -320,7 +321,7 @@ function ReplicateCard({
                             className="rp-btn rp-btn-danger"
                             onClick={() => onDelete(report)}
                         >
-                            Delete
+                            <TrashIcon size={16} /> Delete
                         </button>
                     </>
                 )}

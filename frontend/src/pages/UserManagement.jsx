@@ -1,3 +1,4 @@
+import { PlusIcon, XIcon, SaveIcon, EditIcon, CheckIcon } from "../components/Icons";
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import "./UserManagement.css";
@@ -391,7 +392,7 @@ export default function UserManagement() {
                     className="primary-button"
                     onClick={openCreateForm}
                 >
-                    + Add User
+                    <PlusIcon size={17} /> Add User
                 </button>
 
             </div>
@@ -451,7 +452,7 @@ export default function UserManagement() {
                             onClick={closeForm}
                             disabled={saving}
                         >
-                            Cancel
+                            <XIcon size={16} /> Cancel
                         </button>
 
                     </div>
@@ -626,7 +627,7 @@ export default function UserManagement() {
                                 onClick={closeForm}
                                 disabled={saving}
                             >
-                                Cancel
+                                <XIcon size={16} /> Cancel
                             </button>
 
                             <button
@@ -634,11 +635,7 @@ export default function UserManagement() {
                                 className="primary-button"
                                 disabled={saving}
                             >
-                                {saving
-                                    ? "Saving..."
-                                    : editingUser
-                                        ? "Save Changes"
-                                        : "Create User"}
+                                {saving ? "Saving..." : editingUser ? <><SaveIcon size={16} /> Save Changes</> : <><PlusIcon size={16} /> Create User</>}
                             </button>
 
                         </div>
@@ -829,7 +826,7 @@ export default function UserManagement() {
                                                         openEditForm(user)
                                                     }
                                                 >
-                                                    Edit
+                                                    <EditIcon size={15} /> Edit
                                                 </button>
 
 
@@ -845,9 +842,7 @@ export default function UserManagement() {
                                                     }
                                                 >
 
-                                                    {user.is_active
-                                                        ? "Deactivate"
-                                                        : "Activate"}
+                                                    {user.is_active ? <>Deactivate</> : <><CheckIcon size={15} /> Activate</>}
 
                                                 </button>
 

@@ -2211,3 +2211,27 @@ button {
         grid-template-columns: 1fr;
     }
 }
+/* Shared inline action icons */
+.ui-icon { flex: 0 0 auto; vertical-align: middle; }
+.primary-button, .secondary-button, .danger-button,
+.rl-btn, .rp-btn, .cls-btn, .logout-btn { align-items: center; gap: 7px; }
+
+
+/* Icon alignment for the expanded action set */
+.primary-button, .secondary-button, .danger-button,
+.rl-btn, .rp-btn, .cls-btn, .logout-btn {
+    display: inline-flex;
+    justify-content: center;
+}
+.rl-search > .ui-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+}
+.image-dropzone strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}

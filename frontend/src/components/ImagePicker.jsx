@@ -1,3 +1,4 @@
+import { ImageIcon, UploadIcon } from "./Icons";
 import { useRef, useState } from "react";
 
 export default function ImagePicker({
@@ -42,11 +43,8 @@ export default function ImagePicker({
                         alt="Selected seed batch"
                     />
 
-                    <button
-                        type="button"
-                        onClick={chooseImage}
-                    >
-                        Change Image
+                    <button type="button" onClick={chooseImage}>
+                        <ImageIcon size={16} /> Change Image
                     </button>
                 </div>
             ) : (
@@ -55,9 +53,7 @@ export default function ImagePicker({
                     className="image-dropzone"
                     onClick={chooseImage}
                 >
-                    <strong>
-                        Select seed batch image
-                    </strong>
+                    <strong><UploadIcon size={28} /> Select seed batch image</strong>
 
                     <span>
                         JPG, PNG, WEBP

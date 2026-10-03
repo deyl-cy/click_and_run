@@ -1,3 +1,4 @@
+import { UsersIcon, SettingsIcon, ClipboardIcon, ArrowRightIcon } from "../components/Icons";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -117,9 +118,7 @@ export default function Admin() {
                         className="admin-option-card"
                     >
 
-                        <div className="admin-option-icon">
-                            👥
-                        </div>
+                        <div className="admin-option-icon"><UsersIcon /></div>
 
                         <div className="admin-option-content">
 
@@ -135,9 +134,7 @@ export default function Admin() {
 
                         </div>
 
-                        <div className="admin-option-arrow">
-                            →
-                        </div>
+                        <div className="admin-option-arrow"><ArrowRightIcon /></div>
 
                     </Link>
 
@@ -148,9 +145,7 @@ export default function Admin() {
                         className="admin-option-card admin-option-disabled"
                     >
 
-                        <div className="admin-option-icon">
-                            ⚙️
-                        </div>
+                        <div className="admin-option-icon"><SettingsIcon /></div>
 
                         <div className="admin-option-content">
 
@@ -178,9 +173,7 @@ export default function Admin() {
                         className="admin-option-card admin-option-disabled"
                     >
 
-                        <div className="admin-option-icon">
-                            📋
-                        </div>
+                        <div className="admin-option-icon"><ClipboardIcon /></div>
 
                         <div className="admin-option-content">
 

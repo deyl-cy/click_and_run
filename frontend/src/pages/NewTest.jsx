@@ -1,3 +1,4 @@
+import { XIcon, ScanIcon } from "../components/Icons";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -127,7 +128,7 @@ export default function NewTest() {
                                     setError("");
                                 }}
                             >
-                                Back
+                                <XIcon size={16} /> Back
                             </button>
 
                         </div>
@@ -184,9 +185,7 @@ export default function NewTest() {
                         disabled={!image || loading}
                         onClick={handleAnalyze}
                     >
-                        {loading
-                            ? "Analyzing..."
-                            : "Analyze Image"}
+                        {loading ? "Analyzing..." : <><ScanIcon size={17} /> Analyze Image</>}
                     </button>
                 </>
             )}
