@@ -312,6 +312,43 @@ export default function Dashboard() {
 
             </div>
 
+            {/* Analysts Table of admins */}
+            {Array.isArray(dashboard.analysts) && (
+                <div className="content-card">
+                    <div className="reports-header">
+                        <div>
+                            <h2>By Analyst</h2>
+                            <p>Reports and results per analyst.</p>
+                        </div>
+                    </div>
+
+                    <div className="table-wrapper">
+                        <table className="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Analyst</th>
+                                    <th>Reports</th>
+                                    <th>Seeds</th>
+                                    <th>Avg viability</th>
+                                    <th>Avg germination</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {dashboard.analysts.map((row) => (
+                                    <tr key={row.user_id}>
+                                        <td>{row.name}</td>
+                                        <td>{row.reports}</td>
+                                        <td>{row.seeds}</td>
+                                        <td>{row.viability}%</td>
+                                        <td>{row.germination}%</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
             {/* Analysis Trends */}
             <div className="content-card">
 

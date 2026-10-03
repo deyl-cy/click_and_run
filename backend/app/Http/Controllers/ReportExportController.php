@@ -12,11 +12,7 @@ class ReportExportController extends Controller
 {
     public function pdf(Request $request, Report $report)
     {
-        abort_unless(
-            $report->user_id === $request->user()->id,
-            403,
-            'You are not authorized to export this report.'
-        );
+        $this->authorizeAccess($request, $report);
 
         $report->load(['user:id,name', 'detections']);
 
@@ -29,17 +25,22 @@ class ReportExportController extends Controller
 
     public function excel(Request $request, Report $report)
     {
-        abort_unless(
-            $report->user_id === $request->user()->id,
-            403,
-            'You are not authorized to export this report.'
-        );
+        $this->authorizeAccess($request, $report);
 
         $report->load(['user:id,name', 'detections']);
 
         return Excel::download(
             new ReportExport($report),
             'seed-analysis-report-' . $report->id . '.xlsx'
+        );
+    }
+
+    private function authorizeAccess(Request $request, Report $report): void
+    {
+        abort_unless(
+            $report->isAccessibleBy($request->user()),
+            403,
+            'You are not authorized to export this report.'
         );
     }
 }

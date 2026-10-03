@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const PER_PAGE = 10;
 
@@ -11,6 +12,7 @@ const DEFAULT_FILTERS = {
     dateField: "sown",
     from: "",
     to: "",
+    analyst: "",
 };
 
 function formatDate(value) {
@@ -51,6 +53,10 @@ function buildParams(filters) {
         params.to = filters.to;
     }
 
+    if (filters.analyst) {
+        params.analyst = filters.analyst;
+    }
+
     return params;
 }
 
@@ -89,6 +95,9 @@ function repLine(number, rep) {
 }
 
 export default function Reports() {
+    const { user } = useAuth();
+    const isAdmin = user?.role === "admin";
+
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
     const [groups, setGroups] = useState([]);
     const [page, setPage] = useState(1);
@@ -99,6 +108,7 @@ export default function Reports() {
         current_page: 1,
         last_page: 1,
         per_page: PER_PAGE,
+        analysts: [],
     });
 
     const [loading, setLoading] = useState(true);
@@ -234,7 +244,11 @@ export default function Reports() {
                 <div>
                     <span className="rl-eyebrow">HISTORICAL DATA</span>
                     <h1>Test Reports</h1>
-                    <p>Search and review saved seed analysis records.</p>
+                    <p>
+                        {isAdmin
+                            ? "Search and review seed analysis records from all analysts."
+                            : "Search and review saved seed analysis records."}
+                    </p>
                 </div>
 
                 <Link to="/new-test" className="rl-btn rl-btn-primary">
@@ -276,7 +290,31 @@ export default function Reports() {
             </div>
 
             {/* Date filters / downloads */}
-            <div className="rl-filters">
+            <div
+                className={
+                    "rl-filters" + (isAdmin ? " rl-filters-admin" : "")
+                }
+            >
+                {isAdmin && (
+                    <label>
+                        <span>Tested by</span>
+                        <select
+                            className="rl-input"
+                            value={filters.analyst}
+                            onChange={(event) =>
+                                setFilter("analyst", event.target.value)
+                            }
+                        >
+                            <option value="">All analysts</option>
+                            {(meta.analysts || []).map((person) => (
+                                <option key={person.id} value={person.id}>
+                                    {person.name}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+
                 <label>
                     <span>Date field</span>
                     <select
@@ -368,6 +406,9 @@ export default function Reports() {
                                 <p>Lot No.: {group.seed_lot_no}</p>
                                 <p>Accession: {group.accession || "-"}</p>
                                 <p>Date Sown: {formatDate(group.date_sown)}</p>
+                                {isAdmin && (
+                                    <p>Tested by: {group.tested_by || "-"}</p>
+                                )}
                                 <p>{repLine(1, group.reps?.[1])}</p>
                                 <p>{repLine(2, group.reps?.[2])}</p>
                             </div>

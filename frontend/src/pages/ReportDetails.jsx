@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const REPLICATES = [1, 2];
 
@@ -32,6 +33,22 @@ function formatDate(value) {
     );
 }
 
+function formatDateTime(value) {
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return "";
+    }
+
+    return parsed.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
 function calculate(normal, abnormal, dead) {
     const n = Number(normal) || 0;
     const a = Number(abnormal) || 0;
@@ -56,6 +73,7 @@ function percent(value) {
 function ReplicateCard({
     number,
     report,
+    canAdd,
     busyKey,
     onSaved,
     onDelete,
@@ -90,13 +108,15 @@ function ReplicateCard({
                     No saved analysis for this replicate.
                 </p>
 
-                <button
-                    type="button"
-                    className="rp-btn rp-btn-primary"
-                    onClick={() => onAdd(number)}
-                >
-                    Add Rep {number} Test
-                </button>
+                {canAdd && (
+                    <button
+                        type="button"
+                        className="rp-btn rp-btn-primary"
+                        onClick={() => onAdd(number)}
+                    >
+                        Add Rep {number} Test
+                    </button>
+                )}
             </section>
         );
     }
@@ -230,6 +250,13 @@ function ReplicateCard({
                 </div>
             </div>
 
+            {report.last_edited_at && report.editor && (
+                <p className="rp-edited">
+                    Edited by {report.editor.name} on{" "}
+                    {formatDateTime(report.last_edited_at)}
+                </p>
+            )}
+
             {error && (
                 <div className="error-message rp-error">
                     {error}
@@ -309,6 +336,9 @@ function ReplicateCard({
 export default function ReportDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const isAdmin = user?.role === "admin";
 
     const [report, setReport] = useState(null);
     const [replicates, setReplicates] = useState({});
@@ -483,6 +513,10 @@ export default function ReportDetails() {
         );
     }
 
+    // New replicates are saved under the logged-in user, so only the
+    // owner of this seed lot can add the missing one.
+    const canAdd = report.user_id === user?.id;
+
     const recorded = REPLICATES
         .map((number) => replicates[number])
         .filter(Boolean);
@@ -527,11 +561,18 @@ export default function ReportDetails() {
             <section className="rp-info">
                 <h2>{report.accession_name}</h2>
 
-                <p><strong>Seed Lot No.:</strong> {report.seed_lot_no}</p>
+                <p><strong>2SDS Lot No.:</strong> {report.seed_lot_no}</p>
                 <p><strong>Accession:</strong> {report.accession || "-"}</p>
                 <p><strong>Collection No.:</strong> {report.collection_no}</p>
                 <p><strong>Sowing Date:</strong> {formatDate(report.date_sown)}</p>
                 <p><strong>Reading Date:</strong> {formatDate(report.reading_date)}</p>
+
+                {isAdmin && (
+                    <p>
+                        <strong>Tested by:</strong>{" "}
+                        {report.user?.name || "-"}
+                    </p>
+                )}
             </section>
 
             <section className="rp-summary">
@@ -558,6 +599,7 @@ export default function ReportDetails() {
                         key={`${number}-${replicates[number]?.id ?? "none"}`}
                         number={number}
                         report={replicates[number]}
+                        canAdd={canAdd}
                         busyKey={busyKey}
                         onSaved={handleSaved}
                         onDelete={handleDelete}

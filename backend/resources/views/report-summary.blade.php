@@ -1,5 +1,6 @@
 @php
     $pct = fn ($value) => rtrim(rtrim(number_format((float) $value, 1), '0'), '.') . '%';
+    $cols = ($showAnalyst ?? false) ? 17 : 16;
 @endphp
 <!DOCTYPE html>
 <html>
@@ -75,6 +76,9 @@
                 <th rowspan="2">% VA</th>
                 <th rowspan="2">No. of Seeds Tested</th>
                 <th rowspan="2">Remarks</th>
+                @if ($showAnalyst ?? false)
+                    <th rowspan="2">Tested By</th>
+                @endif
             </tr>
             <tr>
                 <th>Sowing</th>
@@ -109,10 +113,13 @@
                     <td>{{ $pct($group['viability']) }}</td>
                     <td>{{ $group['total_seeds'] }}</td>
                     <td></td>
+                    @if ($showAnalyst ?? false)
+                        <td>{{ $group['tested_by'] ?? '' }}</td>
+                    @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="16" class="empty">No test reports found.</td>
+                    <td colspan="{{ $cols }}" class="empty">No test reports found.</td>
                 </tr>
             @endforelse
         </tbody>

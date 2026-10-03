@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,8 @@ class Report extends Model
         'viability',
         'predicted_germination',
         'image_path',
+        'last_edited_by',
+        'last_edited_at',
     ];
 
     protected $appends = [
@@ -36,6 +39,7 @@ class Report extends Model
         'viability' => 'decimal:1',
         'predicted_germination' => 'integer',
         'replicate_number' => 'integer',
+        'last_edited_at' => 'datetime',
     ];
 
     public function getImageUrlAttribute(): ?string
@@ -47,6 +51,25 @@ class Report extends Model
         return asset(
             'storage/' . $this->image_path
         );
+    }
+
+    /**
+     * Reports the given user is allowed to see:
+     * admins see everything, analysts only their own.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $user->isAdmin()
+            ? $query
+            : $query->where('user_id', $user->id);
+    }
+
+    /**
+     * Owner or admin.
+     */
+    public function isAccessibleBy(User $user): bool
+    {
+        return $user->isAdmin() || $this->user_id === $user->id;
     }
 
     /**
@@ -74,9 +97,23 @@ class Report extends Model
             : 0;
     }
 
+    /**
+     * Record who edited the AI results, and when.
+     */
+    public function markEditedBy(User $user): void
+    {
+        $this->last_edited_by = $user->id;
+        $this->last_edited_at = now();
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'last_edited_by');
     }
 
     public function detections(): HasMany

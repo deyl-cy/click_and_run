@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Storage;
 class ReportController extends Controller
 {
     /**
-     * Display the authenticated user's reports.
+     * Display the reports the user may see
+     * (admin: all, analyst: own).
      */
     public function index(Request $request): JsonResponse
     {
         $query = Report::query()
-            ->where('user_id', $request->user()->id)
+            ->visibleTo($request->user())
             ->with('user:id,name')
             ->withCount('detections')
             ->latest();
@@ -58,18 +59,19 @@ class ReportController extends Controller
 
     /**
      * Display a report together with Rep 1 and Rep 2
-     * of the same seed lot.
+     * of the same seed lot (same analyst).
      */
     public function show(
         Request $request,
         Report $report
     ): JsonResponse {
-        $this->authorizeOwner($request, $report);
+        $this->authorizeAccess($request, $report);
 
-        $report->load('user:id,name');
+        $report->load(['user:id,name', 'editor:id,name']);
 
         // Latest saved report for each replicate of this seed lot.
         $replicates = Report::query()
+            ->with(['user:id,name', 'editor:id,name'])
             ->where('user_id', $report->user_id)
             ->where('seed_lot_no', $report->seed_lot_no)
             ->whereIn('replicate_number', [1, 2])
@@ -95,7 +97,7 @@ class ReportController extends Controller
         Request $request,
         Report $report
     ): JsonResponse {
-        $this->authorizeOwner($request, $report);
+        $this->authorizeAccess($request, $report);
 
         $validated = $request->validate([
             'normal_count' => ['required', 'integer', 'min:0', 'max:100000'],
@@ -109,11 +111,12 @@ class ReportController extends Controller
             (int) $validated['dead_count']
         );
 
+        $report->markEditedBy($request->user());
         $report->save();
 
         return response()->json([
             'message' => 'Report updated successfully.',
-            'data' => $report->fresh(),
+            'data' => $report->fresh(['user:id,name', 'editor:id,name']),
         ]);
     }
 
@@ -124,7 +127,7 @@ class ReportController extends Controller
         Request $request,
         Report $report
     ): JsonResponse {
-        $this->authorizeOwner($request, $report);
+        $this->authorizeAccess($request, $report);
 
         if ($report->image_path) {
             Storage::disk('public')->delete($report->image_path);
@@ -137,12 +140,12 @@ class ReportController extends Controller
         ]);
     }
 
-    private function authorizeOwner(
+    private function authorizeAccess(
         Request $request,
         Report $report
     ): void {
         abort_unless(
-            $report->user_id === $request->user()->id,
+            $report->isAccessibleBy($request->user()),
             403,
             'You are not authorized to access this report.'
         );

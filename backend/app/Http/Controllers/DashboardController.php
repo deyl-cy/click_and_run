@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,9 +16,10 @@ class DashboardController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $userId = $request->user()->id;
+        $user = $request->user();
 
-        $query = Report::where('user_id', $userId);
+        // Admin: every analyst's reports. Analyst: only their own.
+        $query = Report::query()->visibleTo($user);
 
         if ($request->filled('from')) {
             $query->whereDate(
@@ -51,10 +53,12 @@ class DashboardController extends Controller
         $totalDead = (clone $query)->sum('dead_count');
 
         $recentReports = (clone $query)
+            ->with('user:id,name')
             ->latest()
             ->limit(5)
             ->get([
                 'id',
+                'user_id',
                 'seed_lot_no',
                 'accession',
                 'reading_date',
@@ -79,32 +83,59 @@ class DashboardController extends Controller
                 'total_count',
             ]);
 
-        return response()->json([
-            'data' => [
-                'filters' => [
-                    'from' => $request->input('from'),
-                    'to' => $request->input('to'),
-                ],
-
-                'statistics' => [
-                    'totalReports' => $totalReports,
-                    'totalSeeds' => $totalSeeds,
-                    'averageViability' =>
-                        round($averageViability ?? 0, 1),
-                    'averagePredictedGermination' =>
-                        round(
-                            $averagePredictedGermination ?? 0,
-                            1
-                        ),
-                    'normalCount' => $totalNormal,
-                    'abnormalCount' => $totalAbnormal,
-                    'deadCount' => $totalDead,
-                ],
-
-                'recentReports' => $recentReports,
-
-                'analytics' => $analytics,
+        $data = [
+            'filters' => [
+                'from' => $request->input('from'),
+                'to' => $request->input('to'),
             ],
+
+            'statistics' => [
+                'totalReports' => $totalReports,
+                'totalSeeds' => $totalSeeds,
+                'averageViability' =>
+                    round($averageViability ?? 0, 1),
+                'averagePredictedGermination' =>
+                    round(
+                        $averagePredictedGermination ?? 0,
+                        1
+                    ),
+                'normalCount' => $totalNormal,
+                'abnormalCount' => $totalAbnormal,
+                'deadCount' => $totalDead,
+            ],
+
+            'recentReports' => $recentReports,
+
+            'analytics' => $analytics,
+        ];
+
+        // Per-analyst breakdown (admin only).
+        if ($user->isAdmin()) {
+            $names = User::pluck('name', 'id');
+
+            $data['analysts'] = (clone $query)
+                ->selectRaw(
+                    'user_id, COUNT(*) as reports, ' .
+                    'SUM(total_count) as seeds, ' .
+                    'AVG(viability) as viability, ' .
+                    'AVG(predicted_germination) as germination'
+                )
+                ->groupBy('user_id')
+                ->get()
+                ->map(fn ($row) => [
+                    'user_id' => $row->user_id,
+                    'name' => $names[$row->user_id] ?? 'Unknown',
+                    'reports' => (int) $row->reports,
+                    'seeds' => (int) $row->seeds,
+                    'viability' => round((float) $row->viability, 1),
+                    'germination' => round((float) $row->germination, 1),
+                ])
+                ->sortByDesc('reports')
+                ->values();
+        }
+
+        return response()->json([
+            'data' => $data,
         ]);
     }
 }

@@ -9,7 +9,11 @@ use Illuminate\Support\Collection;
 class ReportGroupService
 {
     /**
-     * One entry per seed lot (accession), with Rep 1 and Rep 2.
+     * One entry per seed lot (accession) per analyst,
+     * with Rep 1 and Rep 2.
+     *
+     * Admin: every analyst's reports (optionally one analyst).
+     * Analyst: only their own.
      */
     public function groups(User $user, array $filters = []): Collection
     {
@@ -20,12 +24,15 @@ class ReportGroupService
         $search = $filters['search'] ?? null;
         $from = $filters['from'] ?? null;
         $to = $filters['to'] ?? null;
+        $analyst = $filters['analyst'] ?? null;
 
-        // Seed lots that match the filters.
-        // distinct() runs in SQL (exact match), so "01" and "1"
-        // stay different lots.
-        $matchingLots = Report::query()
-            ->where('user_id', $user->id)
+        // Seed lots that match the filters (exact, SQL distinct).
+        $matching = Report::query()
+            ->visibleTo($user)
+            ->when(
+                $user->isAdmin() && $analyst,
+                fn ($query) => $query->where('user_id', $analyst)
+            )
             ->when($search, function ($query) use ($search) {
                 $like = '%' . $search . '%';
 
@@ -39,19 +46,27 @@ class ReportGroupService
             ->when($from, fn ($query) => $query->whereDate($dateColumn, '>=', $from))
             ->when($to, fn ($query) => $query->whereDate($dateColumn, '<=', $to))
             ->distinct()
-            ->pluck('seed_lot_no');
+            ->get(['user_id', 'seed_lot_no']);
 
-        if ($matchingLots->isEmpty()) {
+        if ($matching->isEmpty()) {
             return collect();
         }
 
+        $wanted = $matching
+            ->map(fn ($row) => $row->user_id . '|' . $row->seed_lot_no)
+            ->flip();
+
         // Load every replicate of those lots (newest first).
         $groups = Report::query()
-            ->where('user_id', $user->id)
-            ->whereIn('seed_lot_no', $matchingLots)
+            ->with('user:id,name')
+            ->whereIn('user_id', $matching->pluck('user_id')->unique())
+            ->whereIn('seed_lot_no', $matching->pluck('seed_lot_no')->unique())
             ->orderByDesc('id')
             ->get()
-            ->groupBy('seed_lot_no')
+            ->filter(fn (Report $report) => $wanted->has(
+                $report->user_id . '|' . $report->seed_lot_no
+            ))
+            ->groupBy(fn (Report $report) => $report->user_id . '|' . $report->seed_lot_no)
             ->map(fn (Collection $reports) => $this->buildGroup($reports))
             ->values();
 
@@ -74,6 +89,14 @@ class ReportGroupService
 
         if (!empty($filters['search'])) {
             $parts[] = 'search "' . $filters['search'] . '"';
+        }
+
+        if (!empty($filters['analyst'])) {
+            $name = User::whereKey($filters['analyst'])->value('name');
+
+            if ($name) {
+                $parts[] = 'tested by ' . $name;
+            }
         }
 
         $field = ($filters['dateField'] ?? 'sown') === 'reading'
@@ -112,9 +135,12 @@ class ReportGroupService
         $total = $normal + $abnormal + $dead;
 
         return [
-            'key' => $base->seed_lot_no,
+            'key' => $base->user_id . '-' . $base->seed_lot_no,
             'id' => $base->id,
             'latest_id' => (int) $reports->max('id'),
+
+            'user_id' => $base->user_id,
+            'tested_by' => $base->user?->name,
 
             'seed_lot_no' => $base->seed_lot_no,
             'accession' => $base->accession,
