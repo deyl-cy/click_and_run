@@ -4,7 +4,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { confirmAction } from "../utils/alert";
+import {
+    alertError,
+    closeAlert,
+    confirmAction,
+    showLoading,
+    toastSuccess,
+} from "../utils/alert";
 
 const REPLICATES = [1, 2];
 
@@ -153,11 +159,46 @@ function ReplicateCard({
         }));
     }
 
+    async function cancelEdit() {
+        const changed =
+            form.normal !== String(report.normal_count) ||
+            form.abnormal !== String(report.abnormal_count) ||
+            form.dead !== String(report.dead_count);
+
+        if (changed) {
+            const ok = await confirmAction({
+                title: "Discard your changes?",
+                text: "The edited counts will not be saved.",
+                confirmText: "Discard",
+                cancelText: "Keep editing",
+                danger: true,
+            });
+
+            if (!ok) {
+                return;
+            }
+        }
+
+        setEditing(false);
+        setError("");
+    }
+
     async function saveChanges() {
         const values = [form.normal, form.abnormal, form.dead];
 
         if (!values.every((value) => /^\d+$/.test(value))) {
             setError("Enter whole numbers (0 or more).");
+            return;
+        }
+
+        const ok = await confirmAction({
+            title: "Save these changes?",
+            text: `The AI results for Rep ${number} will be updated.`,
+            confirmText: "Save changes",
+            icon: "question",
+        });
+
+        if (!ok) {
             return;
         }
 
@@ -272,10 +313,7 @@ function ReplicateCard({
                             type="button"
                             className="rp-btn"
                             disabled={saving}
-                            onClick={() => {
-                                setEditing(false);
-                                setError("");
-                            }}
+                            onClick={cancelEdit}
                         >
                             <XIcon size={16} /> Cancel
                         </button>
@@ -454,8 +492,12 @@ export default function ReportDetails() {
     /* ---------- PDF / Excel ---------- */
 
     async function handleExport(target, kind) {
+        const label = kind === "pdf" ? "PDF" : "Excel";
+
         setBusyKey(`${target.id}-${kind}`);
         setError("");
+
+        showLoading(`Preparing ${label}...`, "This may take a moment.");
 
         try {
             const response = await api.get(
@@ -484,13 +526,16 @@ export default function ReportDetails() {
             link.remove();
 
             window.URL.revokeObjectURL(url);
+
+            closeAlert();
+            toastSuccess(`${label} download started.`);
         } catch (err) {
             console.error(`Unable to export ${kind}:`, err);
 
-            setError(
-                `Unable to export the report as ${
-                    kind === "pdf" ? "PDF" : "Excel"
-                }.`
+            closeAlert();
+            alertError(
+                `Unable to export the report as ${label}.`,
+                "Export failed"
             );
         } finally {
             setBusyKey("");

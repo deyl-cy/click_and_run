@@ -4,6 +4,15 @@ import api from "../services/api";
 import "./UserManagement.css";
 import { confirmAction } from "../utils/alert";
 
+const EMPTY_FORM = {
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    role: "analyst",
+    is_active: true,
+};
+
 export default function UserManagement() {
     const [users, setUsers] = useState([]);
 
@@ -112,9 +121,39 @@ export default function UserManagement() {
         setShowForm(true);
     }
 
-    function closeForm() {
+    // True when the person typed or changed something in the form.
+    function isFormDirty() {
+        const base = editingUser
+            ? {
+                name: editingUser.name || "",
+                email: editingUser.email || "",
+                password: "",
+                password_confirmation: "",
+                role: editingUser.role || "analyst",
+                is_active: Boolean(editingUser.is_active),
+            }
+            : EMPTY_FORM;
+
+        return Object.keys(base).some((key) => form[key] !== base[key]);
+    }
+
+    async function closeForm() {
         if (saving) {
             return;
+        }
+
+        if (isFormDirty()) {
+            const ok = await confirmAction({
+                title: "Discard your changes?",
+                text: "What you entered in this form will be lost.",
+                confirmText: "Discard",
+                cancelText: "Keep editing",
+                danger: true,
+            });
+
+            if (!ok) {
+                return;
+            }
         }
 
         setShowForm(false);
@@ -153,6 +192,21 @@ export default function UserManagement() {
 
     async function handleSubmit(event) {
         event.preventDefault();
+
+        // Setting a new password is sensitive, so ask first.
+        if (editingUser && form.password) {
+            const ok = await confirmAction({
+                title: "Change this user's password?",
+                text: `This will replace the current password for ${editingUser.name}.`,
+                confirmText: "Change password",
+                icon: "warning",
+                danger: true,
+            });
+
+            if (!ok) {
+                return;
+            }
+        }
 
         setSaving(true);
         setError("");
@@ -309,6 +363,17 @@ export default function UserManagement() {
 
     async function changeRole(user, role) {
         if (role === user.role) {
+            return;
+        }
+
+        const ok = await confirmAction({
+            title: "Change this user's role?",
+            text: `${user.name} will become ${role}.`,
+            confirmText: "Change role",
+            danger: true,
+        });
+
+        if (!ok) {
             return;
         }
 

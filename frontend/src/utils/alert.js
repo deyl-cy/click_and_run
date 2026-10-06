@@ -25,8 +25,33 @@ export function toastError(title) {
     Toast.fire({ icon: "error", title, timer: 4500 });
 }
 
-export function alertSuccess(title, text = "") {
-    return Swal.fire({ icon: "success", title, text, ...COLORS });
+export function alertSuccess(title, text = "", confirmText = "OK") {
+    return Swal.fire({
+        icon: "success",
+        title,
+        text,
+        confirmButtonText: confirmText,
+        ...COLORS,
+    });
+}
+
+/**
+ * Show a "please wait" popup with a spinner (e.g. while a file is
+ * being generated). Close it with closeAlert() when the work is done.
+ */
+export function showLoading(title = "Please wait...", text = "") {
+    Swal.fire({
+        title,
+        text,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+    });
+}
+
+export function closeAlert() {
+    Swal.close();
 }
 
 export function alertError(text, title = "Something went wrong") {

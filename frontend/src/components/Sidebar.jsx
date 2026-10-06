@@ -1,6 +1,7 @@
 import { LogOutIcon } from "./Icons";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { confirmAction, toastSuccess } from "../utils/alert";
 
 const icon = {
     width: 20,
@@ -68,6 +69,23 @@ export default function Sidebar() {
     const role = user?.role || "analyst";
     const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
+    async function handleLogout() {
+        const ok = await confirmAction({
+            title: "Log out?",
+            text: "You will need to sign in again to continue.",
+            confirmText: "Yes, log out",
+            cancelText: "Stay signed in",
+            icon: "question",
+        });
+
+        if (!ok) {
+            return;
+        }
+
+        await logout();
+        toastSuccess("You have been logged out.");
+    }
+
     return (
         <aside className="sidebar">
 
@@ -106,7 +124,7 @@ export default function Sidebar() {
                 <button
                     type="button"
                     className="logout-btn"
-                    onClick={logout}
+                    onClick={handleLogout}
                 >
                     <LogOutIcon size={16} /> Log out
                 </button>

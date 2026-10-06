@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import api from "../services/api";
-import { confirmAction } from "../utils/alert";
+import { alertSuccess, confirmAction } from "../utils/alert";
 
 const POPUP_WIDTH = 220;
 const POPUP_HEIGHT = 150;
@@ -241,8 +241,6 @@ export default function Results() {
      * ------------------------------------------------------- */
 
     async function saveReport() {
-        setSaving(true);
-        setSaveError("");
         const ok = await confirmAction({
             title: "Save this report?",
             confirmText: "Save",
@@ -252,6 +250,9 @@ export default function Results() {
         if (!ok) {
             return;
         }
+
+        setSaving(true);
+        setSaveError("");
 
         try {
             const formData = new FormData();
@@ -265,6 +266,12 @@ export default function Results() {
 
             const response = await api.post("/reports", formData);
 
+            await alertSuccess(
+                "Report saved",
+                "Your seed analysis was saved successfully.",
+                "View report"
+            );
+
             navigate(`/reports/${response.data.data.id}`);
         } catch (error) {
             console.error("Unable to save report:", error);
@@ -275,6 +282,20 @@ export default function Results() {
             );
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleCancel() {
+        const ok = await confirmAction({
+            title: "Discard this result?",
+            text: "The analysis has not been saved and will be lost.",
+            confirmText: "Yes, discard",
+            cancelText: "Keep reviewing",
+            danger: true,
+        });
+
+        if (ok) {
+            navigate("/new-test");
         }
     }
 
@@ -591,7 +612,7 @@ export default function Results() {
                 <button
                     type="button"
                     className="cls-btn"
-                    onClick={() => navigate("/new-test")}
+                    onClick={handleCancel}
                     disabled={saving}
                 >
                     <XIcon size={16} /> Cancel

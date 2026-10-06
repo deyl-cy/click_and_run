@@ -6,6 +6,7 @@ import SeedLotForm from "../components/SeedLotForm";
 import ImagePicker from "../components/ImagePicker";
 import AnalyzingOverlay from "../components/AnalyzingOverlay";
 import api from "../services/api";
+import { closeAlert, confirmAction } from "../utils/alert";
 
 const DEFAULT_CONFIDENCE = 30;
 
@@ -24,9 +25,28 @@ export default function NewTest() {
     const [error, setError] = useState("");
 
     const controllerRef = useRef(null);
+    const confirmingRef = useRef(false);
 
-    function handleCancelAnalysis() {
-        controllerRef.current?.abort();
+    async function handleCancelAnalysis() {
+        if (confirmingRef.current) {
+            return;
+        }
+
+        confirmingRef.current = true;
+
+        const ok = await confirmAction({
+            title: "Stop the analysis?",
+            text: "The image will not be analyzed and you will need to start again.",
+            confirmText: "Yes, stop",
+            cancelText: "Keep analyzing",
+            danger: true,
+        });
+
+        confirmingRef.current = false;
+
+        if (ok) {
+            controllerRef.current?.abort();
+        }
     }
 
     function handleDetailsSubmit(data) {
@@ -89,6 +109,11 @@ export default function NewTest() {
                 "Unable to analyze the image."
             );
         } finally {
+            // The analysis finished while the "stop?" popup was open.
+            if (confirmingRef.current) {
+                closeAlert();
+            }
+
             setLoading(false);
         }
     }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import Swal from "sweetalert2";
 
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -17,6 +18,14 @@ const WARNING_MS = WARNING_SECONDS * 1000;
 const HEARTBEAT_MS = HEARTBEAT_MINUTES * 60 * 1000;
 
 const ACTIVITY_KEY = "last_activity";
+const COUNTDOWN_ID = "session-countdown";
+
+function formatTime(totalSeconds) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+    return `${minutes}:${seconds}`;
+}
 
 function readLastActivity() {
     try {
@@ -43,6 +52,7 @@ export default function SessionTimeout() {
     const warningRef = useRef(false);
     const lastBeatRef = useRef(Date.now());
     const lastWriteRef = useRef(0);
+    const popupOpenRef = useRef(false);
 
     const heartbeat = useCallback(async () => {
         lastBeatRef.current = Date.now();
@@ -115,6 +125,11 @@ export default function SessionTimeout() {
                 clearInterval(timer);
                 warningRef.current = false;
 
+                if (popupOpenRef.current) {
+                    popupOpenRef.current = false;
+                    Swal.close();
+                }
+
                 api.post("/auth/logout")
                     .catch(() => {})
                     .finally(() =>
@@ -150,49 +165,72 @@ export default function SessionTimeout() {
         return () => clearInterval(timer);
     }, [expireSession, heartbeat]);
 
-    if (secondsLeft === null) {
-        return null;
-    }
+    /*
+    | Show the warning with SweetAlert and keep its countdown updated.
+    */
+    useEffect(() => {
+        if (secondsLeft === null) {
+            // Activity in another tab, or "Stay signed in" was clicked.
+            if (popupOpenRef.current) {
+                popupOpenRef.current = false;
+                Swal.close();
+            }
 
-    const minutes = Math.floor(secondsLeft / 60);
-    const seconds = String(secondsLeft % 60).padStart(2, "0");
+            return;
+        }
 
-    return (
-        <div className="session-overlay">
-            <div
-                className="session-modal"
-                role="alertdialog"
-                aria-modal="true"
-            >
-                <h2>Are you still there?</h2>
+        if (!popupOpenRef.current) {
+            popupOpenRef.current = true;
 
-                <p>
-                    You will be signed out due to inactivity in
-                </p>
+            Swal.fire({
+                icon: "warning",
+                title: "Are you still there?",
+                html:
+                    "You will be signed out due to inactivity in<br>" +
+                    `<strong id="${COUNTDOWN_ID}" style="font-size:2rem">` +
+                    `${formatTime(secondsLeft)}</strong>`,
+                showDenyButton: true,
+                confirmButtonText: "Stay signed in",
+                denyButtonText: "Sign out",
+                confirmButtonColor: "#111827",
+                denyButtonColor: "#6b7280",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+            }).then((result) => {
+                // Closed by the code above, nothing to do.
+                if (!popupOpenRef.current) {
+                    return;
+                }
 
-                <div className="session-countdown">
-                    {minutes}:{seconds}
-                </div>
+                popupOpenRef.current = false;
 
-                <div className="session-actions">
-                    <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => logout()}
-                    >
-                        Sign out
-                    </button>
+                if (result.isConfirmed) {
+                    staySignedIn();
+                } else if (result.isDenied) {
+                    logout();
+                }
+            });
 
-                    <button
-                        type="button"
-                        className="primary-button"
-                        onClick={staySignedIn}
-                        autoFocus
-                    >
-                        Stay signed in
-                    </button>
-                </div>
-            </div>
-        </div>
+            return;
+        }
+
+        const element = document.getElementById(COUNTDOWN_ID);
+
+        if (element) {
+            element.textContent = formatTime(secondsLeft);
+        }
+    }, [secondsLeft, staySignedIn, logout]);
+
+    // Close the popup if this component goes away.
+    useEffect(
+        () => () => {
+            if (popupOpenRef.current) {
+                popupOpenRef.current = false;
+                Swal.close();
+            }
+        },
+        []
     );
+
+    return null;
 }

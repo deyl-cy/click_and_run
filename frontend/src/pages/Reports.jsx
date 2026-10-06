@@ -4,6 +4,12 @@ import { Link } from "react-router-dom";
 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import {
+    alertError,
+    closeAlert,
+    showLoading,
+    toastSuccess,
+} from "../utils/alert";
 
 const PER_PAGE = 10;
 
@@ -185,8 +191,12 @@ export default function Reports() {
     /* Download PDF / Excel of ALL reports matching the filters */
 
     async function handleDownload(kind) {
+        const label = kind === "pdf" ? "PDF" : "Excel";
+
         setExporting(kind);
         setError("");
+
+        showLoading(`Preparing ${label}...`, "This may take a moment.");
 
         try {
             const response = await api.get(
@@ -218,13 +228,16 @@ export default function Reports() {
             link.remove();
 
             window.URL.revokeObjectURL(url);
+
+            closeAlert();
+            toastSuccess(`${label} download started.`);
         } catch (err) {
             console.error(`Unable to export ${kind}:`, err);
 
-            setError(
-                `Unable to download the ${
-                    kind === "pdf" ? "PDF" : "Excel"
-                } file.`
+            closeAlert();
+            alertError(
+                `Unable to download the ${label} file.`,
+                "Download failed"
             );
         } finally {
             setExporting("");

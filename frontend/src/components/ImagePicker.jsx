@@ -1,5 +1,10 @@
 import { ImageIcon, UploadIcon } from "./Icons";
 import { useRef, useState } from "react";
+import { alertError } from "../utils/alert";
+
+// Same limits as the backend (AnalysisController): jpg, png, webp, 15 MB.
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE_MB = 15;
 
 export default function ImagePicker({
     onChange,
@@ -11,6 +16,24 @@ export default function ImagePicker({
         const file = event.target.files?.[0];
 
         if (!file) {
+            return;
+        }
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alertError(
+                "Please choose a JPG, PNG or WEBP image.",
+                "Unsupported file type"
+            );
+            event.target.value = "";
+            return;
+        }
+
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            alertError(
+                `The image is too large. The maximum size is ${MAX_SIZE_MB} MB.`,
+                "Image too large"
+            );
+            event.target.value = "";
             return;
         }
 
