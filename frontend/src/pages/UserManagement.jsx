@@ -515,23 +515,17 @@ export default function UserManagement() {
                                     Role
                                 </label>
 
-                                <select
+                                <input
                                     id="role"
-                                    name="role"
-                                    value={form.role}
-                                    onChange={handleChange}
-                                    required
-                                >
-
-                                    <option value="analyst">
-                                        Analyst
-                                    </option>
-
-                                    <option value="admin">
-                                        Administrator
-                                    </option>
-
-                                </select>
+                                    type="text"
+                                    value={
+                                        editingUser?.role === "admin"
+                                            ? "Administrator"
+                                            : "Analyst"
+                                    }
+                                    disabled
+                                    readOnly
+                                />
 
                             </div>
 
@@ -755,26 +749,17 @@ export default function UserManagement() {
 
                                         <td>
 
-                                            <select
-                                                className="role-select"
-                                                value={user.role}
-                                                onChange={(event) =>
-                                                    changeRole(
-                                                        user,
-                                                        event.target.value
-                                                    )
+                                            <span
+                                                className={
+                                                    user.role === "admin"
+                                                        ? "role-badge role-badge-admin"
+                                                        : "role-badge"
                                                 }
                                             >
-
-                                                <option value="analyst">
-                                                    Analyst
-                                                </option>
-
-                                                <option value="admin">
-                                                    Administrator
-                                                </option>
-
-                                            </select>
+                                                {user.role === "admin"
+                                                    ? "Administrator"
+                                                    : "Analyst"}
+                                            </span>
 
                                         </td>
 

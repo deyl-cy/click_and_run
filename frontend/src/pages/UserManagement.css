@@ -357,3 +357,22 @@
         width: 100%;
     }
 }
+
+/* =========================================================
+    ROLE BADGES
+========================================================= */
+
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.role-badge-admin {
+    background: #111827;
+    color: #ffffff;
+}

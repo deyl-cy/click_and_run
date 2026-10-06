@@ -56,14 +56,6 @@ class AdminUserController extends Controller
                 'confirmed',
             ],
 
-            'role' => [
-                'required',
-                Rule::in([
-                    'admin',
-                    'analyst',
-                ]),
-            ],
-
             'is_active' => [
                 'sometimes',
                 'boolean',
@@ -76,7 +68,7 @@ class AdminUserController extends Controller
             'password' => Hash::make(
                 $validated['password']
             ),
-            'role' => $validated['role'],
+            'role' => 'analyst', // new users are always analysts
             'is_active' =>
                 $validated['is_active'] ?? true,
         ]);
@@ -134,14 +126,6 @@ class AdminUserController extends Controller
                     ->ignore($user->id),
             ],
 
-            'role' => [
-                'required',
-                Rule::in([
-                    'admin',
-                    'analyst',
-                ]),
-            ],
-
             'is_active' => [
                 'sometimes',
                 'boolean',
@@ -175,30 +159,13 @@ class AdminUserController extends Controller
             ], 422);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent Admin From Removing Their Own Admin Role
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            $user->id === $request->user()->id &&
-            $validated['role'] !== 'admin'
-        ) {
-            return response()->json([
-                'message' =>
-                    'You cannot remove your own administrator role.',
-            ], 422);
-        }
-
         $user->name =
             $validated['name'];
 
         $user->email =
             $validated['email'];
 
-        $user->role =
-            $validated['role'];
+        // Role is fixed: it is never changed from here.
 
         if (
             array_key_exists(
@@ -289,54 +256,14 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Change a user's role.
+     * Roles are fixed and cannot be changed.
      */
     public function updateRole(
         Request $request,
         User $user
     ): JsonResponse {
-        $validated = $request->validate([
-            'role' => [
-                'required',
-                Rule::in([
-                    'admin',
-                    'analyst',
-                ]),
-            ],
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent Self-Demotion
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            $user->id === $request->user()->id &&
-            $validated['role'] !== 'admin'
-        ) {
-            return response()->json([
-                'message' =>
-                    'You cannot remove your own administrator role.',
-            ], 422);
-        }
-
-        $user->role =
-            $validated['role'];
-
-        $user->save();
-
         return response()->json([
-            'message' =>
-                'User role updated successfully.',
-
-            'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'is_active' => $user->is_active,
-            ],
-        ]);
+            'message' => 'User roles are fixed and cannot be changed.',
+        ], 403);
     }
 }
