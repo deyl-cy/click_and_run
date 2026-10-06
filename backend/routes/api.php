@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminActivityLogController;
+use App\Http\Controllers\AdminSettingController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\Api\ReportGroupController;
 
 /*
@@ -60,6 +63,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post(
         '/auth/logout',
         [AuthController::class, 'logout']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Settings (read only, all signed-in users)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/settings',
+        [SettingController::class, 'show']
     );
 
 
@@ -194,6 +209,26 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch(
                 '/users/{user}/role',
                 [AdminUserController::class, 'updateRole']
+            );
+
+            Route::get(
+                '/activity-logs',
+                [AdminActivityLogController::class, 'index']
+            );
+
+            Route::get(
+                '/settings',
+                [AdminSettingController::class, 'index']
+            );
+
+            Route::put(
+                '/settings',
+                [AdminSettingController::class, 'update']
+            );
+
+            Route::post(
+                '/settings/reset',
+                [AdminSettingController::class, 'reset']
             );
         });
 });

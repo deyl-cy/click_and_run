@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -72,6 +73,13 @@ class AdminUserController extends Controller
             'is_active' =>
                 $validated['is_active'] ?? true,
         ]);
+
+        ActivityLogger::log(
+            'user.created',
+            'Created user ' . $user->name . ' (' . $user->email . ').',
+            $request->user(),
+            $user
+        );
 
         return response()->json([
             'message' => 'User created successfully.',
@@ -193,6 +201,13 @@ class AdminUserController extends Controller
 
         $user->save();
 
+        ActivityLogger::log(
+            'user.updated',
+            'Updated user ' . $user->name . ' (' . $user->email . ').',
+            $request->user(),
+            $user
+        );
+
         return response()->json([
             'message' =>
                 'User updated successfully.',
@@ -248,6 +263,14 @@ class AdminUserController extends Controller
         }
 
         $user->save();
+
+        ActivityLogger::log(
+            'user.status',
+            ($user->is_active ? 'Activated' : 'Deactivated')
+                . ' user ' . $user->name . '.',
+            $request->user(),
+            $user
+        );
 
         return response()->json([
             'message' =>

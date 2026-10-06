@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -114,6 +115,14 @@ class ReportController extends Controller
         $report->markEditedBy($request->user());
         $report->save();
 
+        ActivityLogger::log(
+            'report.updated',
+            'Edited report ' . $report->seed_lot_no
+                . ' (Rep ' . $report->replicate_number . ').',
+            $request->user(),
+            $report
+        );
+
         return response()->json([
             'message' => 'Report updated successfully.',
             'data' => $report->fresh(['user:id,name', 'editor:id,name']),
@@ -133,7 +142,16 @@ class ReportController extends Controller
             Storage::disk('public')->delete($report->image_path);
         }
 
+        $label = $report->seed_lot_no
+            . ' (Rep ' . $report->replicate_number . ')';
+
         $report->delete();
+
+        ActivityLogger::log(
+            'report.deleted',
+            'Deleted report ' . $label . '.',
+            $request->user()
+        );
 
         return response()->json([
             'message' => 'Report deleted successfully.',

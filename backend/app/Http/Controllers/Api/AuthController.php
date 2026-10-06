@@ -7,17 +7,12 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Services\ActivityLogger;
+use App\Services\SettingService;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
-    /**
-     * Minutes a token stays valid without any activity.
-     * Keep this a little higher than the idle limit in
-     * frontend/src/components/SessionTimeout.jsx.
-     */
-    private const SESSION_MINUTES = 20;
-
     /**
      * Login
      */
@@ -36,6 +31,14 @@ class AuthController extends Controller
             !$user ||
             !Hash::check($credentials['password'], $user->password)
         ) {
+            ActivityLogger::log(
+                'auth.login_failed',
+                'Failed sign-in attempt for "' . $credentials['username'] . '".',
+                null,
+                null,
+                $credentials['username']
+            );
+
             return response()->json([
                 'message' => 'Invalid username or password.',
             ], 401);
@@ -43,6 +46,12 @@ class AuthController extends Controller
 
         // Correct password, but the account was deactivated by an admin.
         if (!$user->is_active) {
+            ActivityLogger::log(
+                'auth.login_failed',
+                'Sign-in blocked: account is deactivated.',
+                $user
+            );
+
             return response()->json([
                 'code' => 'account_deactivated',
                 'message' =>
@@ -57,8 +66,14 @@ class AuthController extends Controller
         $token = $user->createToken(
             'click-and-run',
             ['*'],
-            now()->addMinutes(self::SESSION_MINUTES)
+            now()->addMinutes(SettingService::sessionMinutes())
         )->plainTextToken;
+
+        ActivityLogger::log(
+            'auth.login',
+            'Signed in.',
+            $user
+        );
 
         return response()->json([
             'token' => $token,
@@ -85,6 +100,12 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
+        ActivityLogger::log(
+            'auth.logout',
+            'Signed out.',
+            $request->user()
+        );
+
         $request->user()
             ->currentAccessToken()
             ?->delete();
@@ -100,7 +121,7 @@ class AuthController extends Controller
 
         if ($token instanceof PersonalAccessToken) {
             $token->forceFill([
-                'expires_at' => now()->addMinutes(self::SESSION_MINUTES),
+                'expires_at' => now()->addMinutes(SettingService::sessionMinutes()),
             ])->save();
         }
     }

@@ -1,5 +1,6 @@
-import { PlusIcon, XIcon, SaveIcon, EditIcon, CheckIcon } from "../components/Icons";
+import { PlusIcon, XIcon, SaveIcon, EditIcon, CheckIcon, BackIcon } from "../components/Icons";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import "./UserManagement.css";
 import { confirmAction } from "../utils/alert";
@@ -464,13 +465,19 @@ export default function UserManagement() {
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    className="primary-button"
-                    onClick={openCreateForm}
-                >
-                    <PlusIcon size={17} /> Add User
-                </button>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <Link to="/admin" className="secondary-button">
+                        <BackIcon size={15} /> Back
+                    </Link>
+
+                    <button
+                        type="button"
+                        className="primary-button"
+                        onClick={openCreateForm}
+                    >
+                        <PlusIcon size={17} /> Add User
+                    </button>
+                </div>
 
             </div>
 

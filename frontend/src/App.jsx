@@ -1,9 +1,4 @@
-import {
-    BrowserRouter,
-    Navigate,
-    Route,
-    Routes,
-} from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 
@@ -19,6 +14,8 @@ import Admin from "./pages/Admin";
 import Results from "./pages/Results";
 import ReportDetails from "./pages/ReportDetails";
 import UserManagement from "./pages/UserManagement";
+import ActivityLog from "./pages/ActivityLog";
+import SystemSettings from "./pages/SystemSettings";
 
 export default function App() {
     return (
@@ -92,8 +89,18 @@ export default function App() {
                                 />
 
                                 <Route
-                                    path="/users"
+                                    path="/admin/users"
                                     element={<UserManagement />}
+                                />
+
+                                <Route
+                                    path="/admin/activity"
+                                    element={<ActivityLog />}
+                                />
+
+                                <Route
+                                    path="/admin/settings"
+                                    element={<SystemSettings />}
                                 />
 
                             </Route>

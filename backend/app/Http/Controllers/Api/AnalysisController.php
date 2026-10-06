@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\ActivityLogger;
 use App\Http\Controllers\Controller;
 use App\Services\ReportService;
 use App\Services\SeedAnalysisService;
@@ -238,6 +239,14 @@ class AnalysisController extends Controller
                 $validated['details'],
                 $validated['analysis'],
                 $request->file('image')
+            );
+
+            ActivityLogger::log(
+                'report.created',
+                'Saved report ' . $report->seed_lot_no
+                    . ' (Rep ' . $report->replicate_number . ').',
+                $request->user(),
+                $report
             );
 
             return response()->json([

@@ -141,8 +141,9 @@ export default function Admin() {
 
                     {/* SYSTEM SETTINGS */}
 
-                    <div
-                        className="admin-option-card admin-option-disabled"
+                    <Link
+                        to="/admin/settings"
+                        className="admin-option-card"
                     >
 
                         <div className="admin-option-icon"><SettingsIcon /></div>
@@ -154,23 +155,22 @@ export default function Admin() {
                             </h3>
 
                             <p>
-                                System configuration and
-                                application settings.
+                                Default confidence, idle timeout
+                                and organization name.
                             </p>
-
-                            <span className="coming-soon-badge">
-                                Coming Soon
-                            </span>
 
                         </div>
 
-                    </div>
+                        <div className="admin-option-arrow"><ArrowRightIcon /></div>
+
+                    </Link>
 
 
                     {/* ACTIVITY / AUDIT LOG */}
 
-                    <div
-                        className="admin-option-card admin-option-disabled"
+                    <Link
+                        to="/admin/activity"
+                        className="admin-option-card"
                     >
 
                         <div className="admin-option-icon"><ClipboardIcon /></div>
@@ -182,17 +182,15 @@ export default function Admin() {
                             </h3>
 
                             <p>
-                                Review administrative and
-                                system activity.
+                                Review sign-ins, report changes
+                                and administrative actions.
                             </p>
-
-                            <span className="coming-soon-badge">
-                                Coming Soon
-                            </span>
 
                         </div>
 
-                    </div>
+                        <div className="admin-option-arrow"><ArrowRightIcon /></div>
+
+                    </Link>
 
                 </div>
 

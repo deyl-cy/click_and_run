@@ -6,9 +6,8 @@ import SeedLotForm from "../components/SeedLotForm";
 import ImagePicker from "../components/ImagePicker";
 import AnalyzingOverlay from "../components/AnalyzingOverlay";
 import api from "../services/api";
+import useSettings from "../hooks/useSettings";
 import { closeAlert, confirmAction } from "../utils/alert";
-
-const DEFAULT_CONFIDENCE = 30;
 
 export default function NewTest() {
     const navigate = useNavigate();
@@ -19,7 +18,10 @@ export default function NewTest() {
         location.state?.prefill ?? null
     );
     const [image, setImage] = useState(null);
-    const [confidence, setConfidence] = useState(DEFAULT_CONFIDENCE);
+    const settings = useSettings();
+    const [chosenConfidence, setConfidence] = useState(null);
+    // Until the analyst moves the slider, use the admin's default.
+    const confidence = chosenConfidence ?? settings.default_confidence;
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -218,7 +220,7 @@ export default function NewTest() {
                             Lower catches more seedlings but risks
                             false positives. Higher is stricter but
                             may miss faint or partial seedlings.
-                            Default: {DEFAULT_CONFIDENCE}%.
+                            Default: {settings.default_confidence}%.
                         </p>
 
                     </div>

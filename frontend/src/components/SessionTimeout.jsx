@@ -3,19 +3,14 @@ import Swal from "sweetalert2";
 
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import useSettings from "../hooks/useSettings";
 
 /*
-| Tune these three numbers.
-| Keep the server limit (SESSION_MINUTES in AuthController.php)
-| higher than IDLE_MINUTES.
+| The idle timeout comes from Admin > System Settings.
+| The server keeps the login valid 5 minutes longer than this.
 */
-const IDLE_MINUTES = 15;
 const WARNING_SECONDS = 60;
-const HEARTBEAT_MINUTES = 4;
-
-const IDLE_MS = IDLE_MINUTES * 60 * 1000;
 const WARNING_MS = WARNING_SECONDS * 1000;
-const HEARTBEAT_MS = HEARTBEAT_MINUTES * 60 * 1000;
 
 const ACTIVITY_KEY = "last_activity";
 const COUNTDOWN_ID = "session-countdown";
@@ -46,6 +41,16 @@ function writeLastActivity() {
 
 export default function SessionTimeout() {
     const { logout, expireSession } = useAuth();
+    const { idle_timeout_minutes: idleMinutes } = useSettings();
+
+    const idleMsRef = useRef(idleMinutes * 60 * 1000);
+    const heartbeatMsRef = useRef(4 * 60 * 1000);
+
+    useEffect(() => {
+        idleMsRef.current = idleMinutes * 60 * 1000;
+        heartbeatMsRef.current =
+            Math.min(4, Math.max(1, idleMinutes / 3)) * 60 * 1000;
+    }, [idleMinutes]);
 
     const [secondsLeft, setSecondsLeft] = useState(null);
 
@@ -120,8 +125,9 @@ export default function SessionTimeout() {
         const timer = setInterval(() => {
             const now = Date.now();
             const idle = now - readLastActivity();
+            const idleMs = idleMsRef.current;
 
-            if (idle >= IDLE_MS) {
+            if (idle >= idleMs) {
                 clearInterval(timer);
                 warningRef.current = false;
 
@@ -141,9 +147,9 @@ export default function SessionTimeout() {
                 return;
             }
 
-            if (idle >= IDLE_MS - WARNING_MS) {
+            if (idle >= idleMs - WARNING_MS) {
                 warningRef.current = true;
-                setSecondsLeft(Math.ceil((IDLE_MS - idle) / 1000));
+                setSecondsLeft(Math.ceil((idleMs - idle) / 1000));
                 return;
             }
 
@@ -155,8 +161,8 @@ export default function SessionTimeout() {
 
             // Keep the server token alive while the user is active.
             if (
-                now - lastBeatRef.current >= HEARTBEAT_MS &&
-                idle < HEARTBEAT_MS
+                now - lastBeatRef.current >= heartbeatMsRef.current &&
+                idle < heartbeatMsRef.current
             ) {
                 heartbeat();
             }

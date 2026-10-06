@@ -1,7 +1,14 @@
-import {AdminIcon, HomeIcon, LogOutIcon, PlusIcon, ReportsIcon, UsersIcon, } from "./Icons";
+import {
+    AdminIcon,
+    HomeIcon,
+    LogOutIcon,
+    PlusIcon,
+    ReportsIcon,
+} from "./Icons";
 import Logo from "./Logo";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import useSettings from "../hooks/useSettings";
 import { confirmAction, toastSuccess } from "../utils/alert";
 
 function Item({ to, end, icon, children }) {
@@ -21,6 +28,7 @@ function Item({ to, end, icon, children }) {
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
+    const settings = useSettings();
 
     const role = user?.role || "analyst";
     const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
@@ -64,10 +72,6 @@ export default function Sidebar() {
                 {role === "admin" && (
                     <Item to="/admin" icon={<AdminIcon size={18} />}>Admin</Item>
                 )}
-
-                {role === "admin" && (
-                    <Item to="/users" icon={<UsersIcon size={18} />}>Users</Item>
-                )}
             </nav>
 
             {/* User / Logout */}
@@ -90,7 +94,7 @@ export default function Sidebar() {
                         <span className="status-dot" />
                         On-premise server
                     </div>
-                    <small>PhilRice Genebank</small>
+                    <small>{settings.lab_name}</small>
                 </div>
             </div>
 
