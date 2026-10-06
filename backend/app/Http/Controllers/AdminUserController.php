@@ -186,6 +186,11 @@ class AdminUserController extends Controller
                 );
         }
 
+        if (!$user->is_active) {
+            // Force sign-out of a deactivated user.
+            $user->tokens()->delete();
+        }
+
         $user->save();
 
         return response()->json([
@@ -236,6 +241,11 @@ class AdminUserController extends Controller
 
         $user->is_active =
             $validated['is_active'];
+
+        if (!$user->is_active) {
+            // Force sign-out of a deactivated user.
+            $user->tokens()->delete();
+        }
 
         $user->save();
 

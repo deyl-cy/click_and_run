@@ -90,7 +90,11 @@ api.interceptors.response.use(
                 .join("\n");
         }
 
-        alertError(message);
+        if (error.response?.data?.code === "account_deactivated") {
+            alertError(message, "Account deactivated");
+        } else {
+            alertError(message);
+        }
 
         return Promise.reject(error);
     }

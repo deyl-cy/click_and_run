@@ -34,12 +34,21 @@ class AuthController extends Controller
 
         if (
             !$user ||
-            !$user->is_active ||
             !Hash::check($credentials['password'], $user->password)
         ) {
             return response()->json([
                 'message' => 'Invalid username or password.',
             ], 401);
+        }
+
+        // Correct password, but the account was deactivated by an admin.
+        if (!$user->is_active) {
+            return response()->json([
+                'code' => 'account_deactivated',
+                'message' =>
+                    'Your account has been deactivated. ' .
+                    'Please contact your administrator.',
+            ], 403);
         }
 
         // Remove previous tokens for this user.
