@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { confirmAction } from "../utils/alert";
 
 const REPLICATES = [1, 2];
 
@@ -388,12 +389,14 @@ export default function ReportDetails() {
     /* ---------- Delete ---------- */
 
     async function handleDelete(target) {
-        const confirmed = window.confirm(
-            `Delete Rep ${target.replicate_number} for seed lot ` +
-            `${target.seed_lot_no}? This cannot be undone.`
-        );
+        const ok = await confirmAction({
+            title: "Delete this report?",
+            text: "This cannot be undone.",
+            confirmText: "Delete",
+            danger: true,
+        });
 
-        if (!confirmed) {
+        if (!ok) {
             return;
         }
 

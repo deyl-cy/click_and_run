@@ -2,6 +2,7 @@ import { PlusIcon, XIcon, SaveIcon, EditIcon, CheckIcon } from "../components/Ic
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import "./UserManagement.css";
+import { confirmAction } from "../utils/alert";
 
 export default function UserManagement() {
     const [users, setUsers] = useState([]);
@@ -250,6 +251,17 @@ export default function UserManagement() {
     async function toggleStatus(user) {
         setError("");
         setSuccess("");
+
+        const ok = await confirmAction({
+        title: user.is_active ? "Deactivate this user?" : "Activate this user?",
+        text: user.name,
+        confirmText: user.is_active ? "Deactivate" : "Activate",
+        danger: user.is_active,
+    });
+
+    if (!ok) {
+        return;
+    }
 
         try {
             const response = await api.patch(

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import api from "../services/api";
+import { confirmAction } from "../utils/alert";
 
 const POPUP_WIDTH = 220;
 const POPUP_HEIGHT = 150;
@@ -242,6 +243,15 @@ export default function Results() {
     async function saveReport() {
         setSaving(true);
         setSaveError("");
+        const ok = await confirmAction({
+            title: "Save this report?",
+            confirmText: "Save",
+            icon: "question",
+        });
+
+        if (!ok) {
+            return;
+        }
 
         try {
             const formData = new FormData();
