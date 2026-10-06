@@ -2,9 +2,17 @@ export default function StatCard({
     title,
     value,
     description,
+    icon,
+    tone = "blue",
 }) {
     return (
         <div className="stat-card">
+            {icon && (
+                <div className={`stat-card-icon stat-icon-${tone}`}>
+                    {icon}
+                </div>
+            )}
+
             <div className="stat-card-title">
                 {title}
             </div>

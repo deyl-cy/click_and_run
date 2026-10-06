@@ -2322,3 +2322,26 @@ button {
     font-size: 13px;
     text-align: center;
 }
+
+/* ===== Stat card icons ===== */
+
+.stat-card {
+    position: relative;
+}
+
+.stat-card-icon {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon-blue { background: #eff6ff; color: #2563eb; }
+.stat-icon-amber { background: #fffbeb; color: #d97706; }
+.stat-icon-green { background: #ecfdf5; color: #059669; }
+.stat-icon-purple { background: #f5f3ff; color: #7c3aed; }

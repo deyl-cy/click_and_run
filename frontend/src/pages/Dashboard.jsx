@@ -1,4 +1,4 @@
-import { RefreshIcon, CheckIcon, XIcon } from "../components/Icons";
+import { RefreshIcon, CheckIcon, XIcon, ReportFileIcon, SeedIcon, ViabilityIcon, GerminationIcon } from "../components/Icons";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
@@ -256,6 +256,7 @@ export default function Dashboard() {
             <div className="stats-grid">
 
                 <div className="stat-card">
+                    <div className="stat-card-icon stat-icon-blue"><ReportFileIcon size={18} /></div>
                     <div className="stat-card-title">
                         Total Reports
                     </div>
@@ -270,6 +271,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="stat-card">
+                    <div className="stat-card-icon stat-icon-amber"><SeedIcon size={18} /></div>
                     <div className="stat-card-title">
                         Seeds Analyzed
                     </div>
@@ -284,6 +286,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="stat-card">
+                    <div className="stat-card-icon stat-icon-green"><ViabilityIcon size={18} /></div>
                     <div className="stat-card-title">
                         Average Viability
                     </div>
@@ -298,6 +301,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="stat-card">
+                    <div className="stat-card-icon stat-icon-purple"><GerminationIcon size={18} /></div>
                     <div className="stat-card-title">
                         Average Germination
                     </div>
