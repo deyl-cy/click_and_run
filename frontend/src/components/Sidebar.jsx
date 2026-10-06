@@ -1,4 +1,5 @@
-import { AdminIcon, HomeIcon, LogOutIcon, PlusIcon, ReportsIcon, UsersIcon, } from "./Icons";
+import {AdminIcon, HomeIcon, LogOutIcon, PlusIcon, ReportsIcon, UsersIcon, } from "./Icons";
+import Logo from "./Logo";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { confirmAction, toastSuccess } from "../utils/alert";
@@ -46,7 +47,7 @@ export default function Sidebar() {
 
             {/* Brand */}
             <div className="sidebar-brand">
-                <div className="sidebar-logo">c</div>
+                <Logo size={40} />
 
                 <div>
                     <h2>Click &amp; Run</h2>

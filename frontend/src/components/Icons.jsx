@@ -58,6 +58,10 @@ export const AdminIcon = (props) => <BI name="shield-check" {...props} />;
 
 /* Dashboard cards */
 export const ReportFileIcon = (props) => <BI name="file-earmark-text" {...props} />;
-export const SeedIcon = (props) => <BI name="flower2" {...props} />;
+export const SeedIcon = (props) => <BI name="bar-chart-line" {...props} />;
 export const ViabilityIcon = (props) => <BI name="heart-pulse" {...props} />;
 export const GerminationIcon = (props) => <BI name="graph-up-arrow" {...props} />;
+export const EyeSlashIcon = (props) => <BI name="eye-slash" {...props} />;
+export const CameraIcon = (props) => <BI name="camera" {...props} />;
+export const CpuIcon = (props) => <BI name="cpu" {...props} />;
+export const ClipboardCheckIcon = (props) => <BI name="clipboard-check" {...props} />;
