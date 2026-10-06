@@ -1,5 +1,6 @@
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useState,
@@ -24,10 +25,6 @@ export function AuthProvider({ children }) {
             const token =
                 localStorage.getItem("auth_token");
 
-            /*
-             * No token means the user is not logged in.
-             */
-
             if (!token) {
                 setUser(null);
                 setLoading(false);
@@ -37,14 +34,6 @@ export function AuthProvider({ children }) {
             try {
                 const response =
                     await api.get("/auth/user");
-
-                /*
-                 * Your API currently returns:
-                 *
-                 * {
-                 *     user: {...}
-                 * }
-                 */
 
                 setUser(response.data.user);
 
@@ -72,6 +61,50 @@ export function AuthProvider({ children }) {
 
     /*
     |--------------------------------------------------------------------------
+    | Session expired (idle timeout or rejected token)
+    |--------------------------------------------------------------------------
+    */
+
+    const expireSession = useCallback((message) => {
+        localStorage.removeItem("auth_token");
+
+        try {
+            sessionStorage.setItem(
+                "session_message",
+                message ||
+                    "Your session has expired. Please sign in again."
+            );
+        } catch {
+            /* ignore */
+        }
+
+        setUser(null);
+    }, []);
+
+    useEffect(() => {
+        function handleExpired() {
+            expireSession();
+        }
+
+        function handleStorage(event) {
+            // Logged out (or expired) in another tab.
+            if (event.key === "auth_token" && !event.newValue) {
+                setUser(null);
+            }
+        }
+
+        window.addEventListener("auth:expired", handleExpired);
+        window.addEventListener("storage", handleStorage);
+
+        return () => {
+            window.removeEventListener("auth:expired", handleExpired);
+            window.removeEventListener("storage", handleStorage);
+        };
+    }, [expireSession]);
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Login
     |--------------------------------------------------------------------------
     */
@@ -86,26 +119,21 @@ export function AuthProvider({ children }) {
             }
         );
 
-        /*
-         * Save authentication token.
-         */
-
         localStorage.setItem(
             "auth_token",
             response.data.token
         );
 
-        /*
-         * Store the complete authenticated user.
-         *
-         * This should include:
-         *
-         * id
-         * name
-         * email
-         * role
-         * is_active
-         */
+        localStorage.setItem(
+            "last_activity",
+            String(Date.now())
+        );
+
+        try {
+            sessionStorage.removeItem("session_message");
+        } catch {
+            /* ignore */
+        }
 
         setUser(response.data.user);
 
@@ -125,11 +153,6 @@ export function AuthProvider({ children }) {
             await api.post("/auth/logout");
 
         } catch (error) {
-            /*
-             * Even if the server rejects the logout
-             * request, remove the local authentication.
-             */
-
             console.error(
                 "Logout request failed:",
                 error
@@ -157,6 +180,7 @@ export function AuthProvider({ children }) {
                 loading,
                 login,
                 logout,
+                expireSession,
             }}
         >
             {children}

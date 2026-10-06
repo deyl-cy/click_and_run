@@ -10,6 +10,15 @@ export default function Login() {
     const [password, setPassword] = useState("");
 
     const [error, setError] = useState("");
+    const [notice] = useState(() => {
+        try {
+            const message = sessionStorage.getItem("session_message");
+            sessionStorage.removeItem("session_message");
+            return message || "";
+        } catch {
+            return "";
+        }
+    });
     const [submitting, setSubmitting] = useState(false);
 
     if (user) {
@@ -43,6 +52,12 @@ export default function Login() {
                     <h1>Click & Run</h1>
                     <p>Rice Seed Analysis System</p>
                 </div>
+
+                {notice && (
+                    <div className="login-notice">
+                        {notice}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
 

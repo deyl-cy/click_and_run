@@ -1,9 +1,10 @@
 import { XIcon, ScanIcon } from "../components/Icons";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import SeedLotForm from "../components/SeedLotForm";
 import ImagePicker from "../components/ImagePicker";
+import AnalyzingOverlay from "../components/AnalyzingOverlay";
 import api from "../services/api";
 
 const DEFAULT_CONFIDENCE = 30;
@@ -22,6 +23,12 @@ export default function NewTest() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const controllerRef = useRef(null);
+
+    function handleCancelAnalysis() {
+        controllerRef.current?.abort();
+    }
+
     function handleDetailsSubmit(data) {
         setError("");
         setDetails(data);
@@ -34,6 +41,9 @@ export default function NewTest() {
 
         setLoading(true);
         setError("");
+
+        const controller = new AbortController();
+        controllerRef.current = controller;
 
         try {
             const formData = new FormData();
@@ -53,7 +63,8 @@ export default function NewTest() {
 
             const response = await api.post(
                 "/reports/analyze",
-                formData
+                formData,
+                { signal: controller.signal }
             );
 
             const result = response.data?.data;
@@ -67,6 +78,10 @@ export default function NewTest() {
             });
 
         } catch (error) {
+            if (error.code === "ERR_CANCELED") {
+                return;
+            }
+
             console.error("Analysis error:", error);
 
             setError(
@@ -80,6 +95,10 @@ export default function NewTest() {
 
     return (
         <div className="new-test-page">
+
+            {loading && (
+                <AnalyzingOverlay onCancel={handleCancelAnalysis} />
+            )}
 
             <div className="page-header">
                 <div>
